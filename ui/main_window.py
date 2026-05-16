@@ -3,7 +3,7 @@ import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTableWidget, QTableWidgetItem, QPushButton,
                              QLabel, QLineEdit, QHeaderView, QTextEdit,
-                             QComboBox, QDateEdit, QGridLayout, QFrame, QMenu)
+                             QComboBox, QDateEdit, QGridLayout, QFrame, QMenu, QApplication)
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QPixmap, QAction
 from database import get_connection
@@ -140,15 +140,44 @@ class MainWindow(QMainWindow):
 
     def show_context_menu(self, pos):
         menu = QMenu()
-        fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self)
-        fill_down_action.triggered.connect(self.fill_down)
-        menu.addAction(fill_down_action)
-
-        duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self)
-        duplicate_row_action.triggered.connect(self.duplicate_row)
-        menu.addAction(duplicate_row_action)
-
+        copy_action = QAction("Copy / Kopyala (Ctrl+C)", self); copy_action.triggered.connect(self.copy_to_clipboard); menu.addAction(copy_action)
+        paste_action = QAction("Paste / Yapıştır (Ctrl+V)", self); paste_action.triggered.connect(self.paste_from_clipboard); menu.addAction(paste_action)
+        menu.addSeparator()
+        fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self); fill_down_action.triggered.connect(self.fill_down); menu.addAction(fill_down_action)
+        duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self); duplicate_row_action.triggered.connect(self.duplicate_row); menu.addAction(duplicate_row_action)
         menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def copy_to_clipboard(self):
+        ranges = self.table.selectedRanges()
+        if not ranges: return
+        rng = ranges[0]
+        text = ""
+        for r in range(rng.topRow(), rng.bottomRow() + 1):
+            row_text = []
+            for c in range(rng.leftColumn(), rng.rightColumn() + 1):
+                item = self.table.item(r, c)
+                row_text.append(item.text() if item else "")
+            text += "\t".join(row_text) + "\n"
+        QApplication.clipboard().setText(text)
+
+    def paste_from_clipboard(self):
+        text = QApplication.clipboard().text()
+        if not text: return
+        rows = text.strip().split("\n")
+        curr_row = self.table.currentRow()
+        curr_col = self.table.currentColumn()
+        if curr_row < 0 or curr_col < 0: return
+        self.table.blockSignals(True)
+        for i, row_text in enumerate(rows):
+            r = curr_row + i
+            if r >= self.table.rowCount(): self.add_row()
+            cols = row_text.split("\t")
+            for j, val in enumerate(cols):
+                c = curr_col + j
+                if c < self.table.columnCount():
+                    self.table.setItem(r, c, QTableWidgetItem(val))
+                    if c in [4, 7]: self.recalculate_row(r)
+        self.table.blockSignals(False); self.update_totals()
 
     def fill_down(self):
         selected_ranges = self.table.selectedRanges()
@@ -176,10 +205,12 @@ class MainWindow(QMainWindow):
         self.table.blockSignals(False); self.update_totals()
 
     def keyPressEvent(self, event):
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_D:
-            self.fill_down()
-        else:
-            super().keyPressEvent(event)
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_C: self.copy_to_clipboard()
+            elif event.key() == Qt.Key.Key_V: self.paste_from_clipboard()
+            elif event.key() == Qt.Key.Key_D: self.fill_down()
+            else: super().keyPressEvent(event)
+        else: super().keyPressEvent(event)
 
     def recalculate_row(self, r):
         b, g = self.table.item(r, 4), self.table.item(r, 7)
