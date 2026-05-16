@@ -1,33 +1,36 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox)
+                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
+                             QMessageBox, QFileDialog, QApplication)
 from database import get_connection
+import pandas as pd
 
 class ProductDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Product Management / Ürün Yönetimi")
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(600, 500)
         self.init_ui()
         self.load_products()
 
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # Form for adding
+        # Manual Add Form
         form_layout = QHBoxLayout()
-        self.code_input = QLineEdit()
-        self.code_input.setPlaceholderText("Code / Kod")
-        self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Name / Ad")
-
-        form_layout.addWidget(self.code_input)
-        form_layout.addWidget(self.name_input)
-
-        btn_add = QPushButton("Add / Ekle")
-        btn_add.clicked.connect(self.add_product)
-        form_layout.addWidget(btn_add)
-
+        self.code_input = QLineEdit(); self.code_input.setPlaceholderText("Code / Kod")
+        self.name_input = QLineEdit(); self.name_input.setPlaceholderText("Name / Ad")
+        btn_add = QPushButton("Add / Ekle"); btn_add.clicked.connect(self.add_product)
+        form_layout.addWidget(self.code_input); form_layout.addWidget(self.name_input); form_layout.addWidget(btn_add)
         layout.addLayout(form_layout)
+
+        # Bulk Actions
+        bulk_layout = QHBoxLayout()
+        btn_import_excel = QPushButton("Import Excel / Excel'den Yükle")
+        btn_import_excel.clicked.connect(self.import_from_excel)
+        btn_paste_bulk = QPushButton("Paste Bulk / Toplu Yapıştır")
+        btn_paste_bulk.clicked.connect(self.import_from_clipboard)
+        bulk_layout.addWidget(btn_import_excel); bulk_layout.addWidget(btn_paste_bulk)
+        layout.addLayout(bulk_layout)
 
         # Table
         self.table = QTableWidget()
@@ -37,58 +40,66 @@ class ProductDialog(QDialog):
 
         # Bottom buttons
         btn_layout = QHBoxLayout()
-        btn_delete = QPushButton("Delete Selected / Seçileni Sil")
-        btn_delete.clicked.connect(self.delete_product)
-        btn_layout.addWidget(btn_delete)
-
-        btn_close = QPushButton("Close / Kapat")
-        btn_close.clicked.connect(self.accept)
-        btn_layout.addWidget(btn_close)
-
+        btn_delete = QPushButton("Delete Selected / Seçileni Sil"); btn_delete.clicked.connect(self.delete_product)
+        btn_close = QPushButton("Close / Kapat"); btn_close.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_delete); btn_layout.addWidget(btn_close)
         layout.addLayout(btn_layout)
         self.setLayout(layout)
 
     def load_products(self):
-        conn = get_connection()
-        cursor = conn.cursor()
+        conn = get_connection(); cursor = conn.cursor()
         cursor.execute("SELECT id, code, name FROM products")
-        rows = cursor.fetchall()
-        conn.close()
-
+        rows = cursor.fetchall(); conn.close()
         self.table.setRowCount(len(rows))
         for i, row in enumerate(rows):
-            for j, val in enumerate(row):
-                self.table.setItem(i, j, QTableWidgetItem(str(val)))
+            for j, val in enumerate(row): self.table.setItem(i, j, QTableWidgetItem(str(val)))
 
     def add_product(self):
-        code = self.code_input.text()
-        name = self.name_input.text()
+        code, name = self.code_input.text(), self.name_input.text()
+        if not code or not name: return
+        self.save_to_db([(code, name)])
+        self.code_input.clear(); self.name_input.clear()
 
-        if not code or not name:
-            QMessageBox.warning(self, "Error", "Code and Name are required!")
-            return
-
+    def import_from_excel(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Excel", "", "Excel Files (*.xlsx *.xls)")
+        if not file_path: return
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO products (code, name) VALUES (?, ?)", (code, name))
-            conn.commit()
-            conn.close()
-            self.load_products()
-            self.code_input.clear()
-            self.name_input.clear()
+            df = pd.read_excel(file_path)
+            # Expecting first two columns to be Code and Name
+            data = df.iloc[:, :2].values.tolist()
+            self.save_to_db(data)
+            QMessageBox.information(self, "Success", f"Imported {len(data)} products.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Could not add product: {e}")
+            QMessageBox.critical(self, "Error", f"Could not import: {e}")
+
+    def import_from_clipboard(self):
+        text = QApplication.clipboard().text()
+        if not text: return
+        try:
+            lines = text.strip().split("\n")
+            data = [line.split("\t") for line in lines if "\t" in line]
+            if not data:
+                QMessageBox.warning(self, "Warning", "Please copy data with TAB separation (like from Excel).")
+                return
+            self.save_to_db(data)
+            QMessageBox.information(self, "Success", f"Pasted {len(data)} products.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Could not paste: {e}")
+
+    def save_to_db(self, product_list):
+        try:
+            conn = get_connection(); cursor = conn.cursor()
+            cursor.executemany("INSERT INTO products (code, name) VALUES (?, ?)", product_list)
+            conn.commit(); conn.close()
+            self.load_products()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Database error: {e}")
 
     def delete_product(self):
         selected = self.table.currentRow()
         if selected < 0: return
-        product_id = self.table.item(selected, 0).text()
-        reply = QMessageBox.question(self, 'Delete', 'Are you sure?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
-            conn.commit()
-            conn.close()
-            self.load_products()
+        pid = self.table.item(selected, 0).text()
+        if QMessageBox.question(self, 'Delete', 'Are you sure?') == QMessageBox.StandardButton.Yes:
+            conn = get_connection(); cursor = conn.cursor()
+            cursor.execute("DELETE FROM products WHERE id = ?", (pid,))
+            conn.commit(); conn.close(); self.load_products()
