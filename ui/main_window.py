@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Packing List Generator")
-        self.setMinimumSize(1100, 850)
+        self.setMinimumSize(1100, 900)
         self.current_lang = SettingsManager.get_setting('language', 'tr')
         self.init_ui()
         self.load_settings()
@@ -39,7 +39,6 @@ class MainWindow(QMainWindow):
         self.btn_settings.clicked.connect(self.open_settings)
         self.btn_lang = QPushButton("TR / EN")
         self.btn_lang.clicked.connect(self.toggle_language)
-
         menu_layout.addWidget(self.btn_products)
         menu_layout.addWidget(self.btn_sizes)
         menu_layout.addWidget(self.btn_settings)
@@ -47,72 +46,71 @@ class MainWindow(QMainWindow):
         menu_layout.addWidget(self.btn_lang)
         main_layout.addLayout(menu_layout)
 
-        # Header Info Grid
-        header_grid = QGridLayout()
+        # Header Info: Doc Info Left, Logo Right
+        header_hbox = QHBoxLayout()
 
-        # Left side: Doc Info
-        header_grid.addWidget(QLabel("Document No:"), 0, 0)
+        doc_info_grid = QGridLayout()
+        doc_info_grid.addWidget(QLabel("PACKING LIST"), 0, 0, 1, 2)
+        doc_info_grid.addWidget(QLabel("Document No:"), 1, 0)
         self.edit_doc_no = QLineEdit()
-        header_grid.addWidget(self.edit_doc_no, 0, 1)
-
-        header_grid.addWidget(QLabel("Date:"), 1, 0)
+        doc_info_grid.addWidget(self.edit_doc_no, 1, 1)
+        doc_info_grid.addWidget(QLabel("Date:"), 2, 0)
         self.edit_date = QDateEdit(QDate.currentDate())
         self.edit_date.setCalendarPopup(True)
-        header_grid.addWidget(self.edit_date, 1, 1)
+        doc_info_grid.addWidget(self.edit_date, 2, 1)
+        header_hbox.addLayout(doc_info_grid)
 
-        # Logo Area
-        self.lbl_logo = QLabel("LOGO")
-        self.lbl_logo.setFixedSize(150, 60)
+        header_hbox.addStretch()
+
+        self.lbl_logo = QLabel()
+        self.lbl_logo.setFixedSize(200, 80)
         self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_logo.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
-        header_grid.addWidget(self.lbl_logo, 0, 3, 2, 1)
-
-        main_layout.addLayout(header_grid)
+        header_hbox.addWidget(self.lbl_logo)
+        main_layout.addLayout(header_hbox)
 
         # Consignee Section
-        main_layout.addWidget(QLabel("<b>CONSIGNEE</b>"))
-        consignee_layout = QGridLayout()
-        consignee_layout.addWidget(QLabel("Company:"), 0, 0)
+        main_layout.addWidget(QLabel("<b>CONSIGNE</b>"))
+        con_grid = QGridLayout()
+        con_grid.addWidget(QLabel("Company:"), 0, 0)
         self.edit_con_company = QLineEdit()
-        consignee_layout.addWidget(self.edit_con_company, 0, 1)
-
-        consignee_layout.addWidget(QLabel("Address:"), 1, 0)
+        con_grid.addWidget(self.edit_con_company, 0, 1)
+        con_grid.addWidget(QLabel("Address:"), 1, 0)
         self.edit_con_address = QLineEdit()
-        consignee_layout.addWidget(self.edit_con_address, 1, 1)
-
-        consignee_layout.addWidget(QLabel("Tel:"), 2, 0)
+        con_grid.addWidget(self.edit_con_address, 1, 1)
+        con_grid.addWidget(QLabel("Tel:"), 2, 0)
         self.edit_con_tel = QLineEdit()
-        consignee_layout.addWidget(self.edit_con_tel, 2, 1)
-        main_layout.addLayout(consignee_layout)
+        con_grid.addWidget(self.edit_con_tel, 2, 1)
+        main_layout.addLayout(con_grid)
 
         # Shipper Section
         main_layout.addWidget(QLabel("<b>SHIPPER / EXPORTER</b>"))
-        shipper_layout = QGridLayout()
-        shipper_layout.addWidget(QLabel("Company:"), 0, 0)
+        ship_grid = QGridLayout()
+        ship_grid.addWidget(QLabel("Company:"), 0, 0)
         self.edit_ship_company = QLineEdit()
-        shipper_layout.addWidget(self.edit_ship_company, 0, 1)
-
-        shipper_layout.addWidget(QLabel("Address:"), 1, 0)
+        ship_grid.addWidget(self.edit_ship_company, 0, 1)
+        ship_grid.addWidget(QLabel("Address:"), 1, 0)
         self.edit_ship_address = QLineEdit()
-        shipper_layout.addWidget(self.edit_ship_address, 1, 1)
-
-        shipper_layout.addWidget(QLabel("Tel:"), 2, 0)
+        ship_grid.addWidget(self.edit_ship_address, 1, 1)
+        ship_grid.addWidget(QLabel("Tel:"), 2, 0)
         self.edit_ship_tel = QLineEdit()
-        shipper_layout.addWidget(self.edit_ship_tel, 2, 1)
-        main_layout.addLayout(shipper_layout)
+        ship_grid.addWidget(self.edit_ship_tel, 2, 1)
+        main_layout.addLayout(ship_grid)
 
-        # Remarks
-        main_layout.addWidget(QLabel("<b>REMARKS</b>"))
-        self.edit_remarks = QTextEdit()
-        self.edit_remarks.setMaximumHeight(60)
-        main_layout.addLayout(QVBoxLayout())
-        main_layout.addWidget(self.edit_remarks)
+        # Remarks / Extra Fields
+        main_layout.addWidget(QLabel("<b>REMARKS / EXTRA INFO</b>"))
+        extra_grid = QGridLayout()
+        self.edit_incoterms = QLineEdit(); extra_grid.addWidget(QLabel("Incoterms:"), 0, 0); extra_grid.addWidget(self.edit_incoterms, 0, 1)
+        self.edit_pol = QLineEdit(); extra_grid.addWidget(QLabel("Port of Loading:"), 0, 2); extra_grid.addWidget(self.edit_pol, 0, 3)
+        self.edit_pod = QLineEdit(); extra_grid.addWidget(QLabel("Place of Delivery:"), 1, 0); extra_grid.addWidget(self.edit_pod, 1, 1)
+        self.edit_origin = QLineEdit(); extra_grid.addWidget(QLabel("Origin Country:"), 1, 2); extra_grid.addWidget(self.edit_origin, 1, 3)
+        self.edit_gtip = QLineEdit(); extra_grid.addWidget(QLabel("Gtip Code:"), 2, 0); extra_grid.addWidget(self.edit_gtip, 2, 1)
+        main_layout.addLayout(extra_grid)
 
         # Table
         self.table = QTableWidget()
-        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağırlık", "Bürüt Ağırlık"]
-        self.headers_en = ["Product Code", "Product Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
-        self.table.setColumnCount(len(self.headers_tr))
+        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
+        self.table.setColumnCount(8)
         self.update_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.itemChanged.connect(self.on_item_changed)
@@ -120,36 +118,50 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.table)
 
         # Footer
-        footer_grid = QGridLayout()
-        self.lbl_total_boxes = QLabel("Total Box: 0")
-        self.edit_total_pallets = QLineEdit()
-        self.edit_total_pallets.setFixedWidth(60)
+        footer_hbox = QHBoxLayout()
+        self.btn_remove_row = QPushButton("- Row Sil")
+        self.btn_remove_row.clicked.connect(self.remove_row)
+        footer_hbox.addWidget(self.btn_remove_row)
+
+        footer_hbox.addStretch()
+
+        totals_grid = QGridLayout()
+        totals_grid.addWidget(QLabel("TOTAL BOX:"), 0, 0)
+        self.lbl_total_boxes = QLabel("0")
+        totals_grid.addWidget(self.lbl_total_boxes, 0, 1)
+
+        totals_grid.addWidget(QLabel("TOTAL PALLET:"), 1, 0)
+        self.edit_total_pallets = QLineEdit(); self.edit_total_pallets.setFixedWidth(50)
         self.edit_total_pallets.textChanged.connect(self.update_totals)
+        totals_grid.addWidget(self.edit_total_pallets, 1, 1)
 
-        self.lbl_total_net = QLabel("Total Net Weight: 0.0")
-        self.lbl_total_gross = QLabel("Total Gross Weight: 0.0")
+        totals_grid.addWidget(QLabel("NET WEIGHT:"), 2, 0)
+        self.lbl_total_net = QLabel("0.0")
+        totals_grid.addWidget(self.lbl_total_net, 2, 1)
 
-        footer_grid.addWidget(self.lbl_total_boxes, 0, 0)
-        footer_grid.addWidget(QLabel("Total Pallet:"), 0, 1)
-        footer_grid.addWidget(self.edit_total_pallets, 0, 2)
-        footer_grid.addWidget(self.lbl_total_net, 1, 0)
-        footer_grid.addWidget(self.lbl_total_gross, 1, 1)
+        totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 3, 0)
+        self.lbl_total_gross = QLabel("0.0")
+        totals_grid.addWidget(self.lbl_total_gross, 3, 1)
 
+        footer_hbox.addLayout(totals_grid)
+        main_layout.addLayout(footer_hbox)
+
+        # Export Buttons
+        exp_layout = QHBoxLayout()
+        exp_layout.addStretch()
         self.btn_export_pdf = QPushButton("Export PDF")
         self.btn_export_pdf.clicked.connect(self.export_pdf)
         self.btn_export_excel = QPushButton("Export Excel")
         self.btn_export_excel.clicked.connect(self.export_excel)
-        footer_grid.addWidget(self.btn_export_pdf, 0, 3)
-        footer_grid.addWidget(self.btn_export_excel, 1, 3)
-
-        main_layout.addLayout(footer_grid)
+        exp_layout.addWidget(self.btn_export_pdf)
+        exp_layout.addWidget(self.btn_export_excel)
+        main_layout.addLayout(exp_layout)
 
     def init_table_rows(self):
         for _ in range(15): self.add_row()
 
     def update_headers(self):
-        headers = self.headers_tr if self.current_lang == 'tr' else self.headers_en
-        self.table.setHorizontalHeaderLabels(headers)
+        self.table.setHorizontalHeaderLabels(self.headers_tr if self.current_lang == 'tr' else ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."])
 
     def toggle_language(self):
         self.current_lang = 'en' if self.current_lang == 'tr' else 'tr'
@@ -157,70 +169,65 @@ class MainWindow(QMainWindow):
         self.update_headers()
 
     def add_row(self):
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        for i in range(self.table.columnCount()):
-            self.table.setItem(row, i, QTableWidgetItem(""))
+        r = self.table.rowCount()
+        self.table.insertRow(r)
+        for i in range(8): self.table.setItem(r, i, QTableWidgetItem(""))
+
+    def remove_row(self):
+        curr = self.table.currentRow()
+        if curr >= 0: self.table.removeRow(curr); self.update_totals()
 
     def on_item_changed(self, item):
         self.table.blockSignals(True)
-        row, col = item.row(), item.column()
-        if row == self.table.rowCount() - 1 and item.text(): self.add_row()
-        if col in [4, 7]:
-            self.recalculate_row(row)
-            self.update_totals()
+        r, c = item.row(), item.column()
+        if r == self.table.rowCount()-1 and item.text(): self.add_row()
+        if c in [4, 7]: self.recalculate_row(r); self.update_totals()
         self.table.blockSignals(False)
 
-    def on_cell_double_clicked(self, row, col):
+    def on_cell_double_clicked(self, r, c):
         dlg = SelectionDialog(self)
         if dlg.exec():
             self.table.blockSignals(True)
-            curr_row = row
+            curr = r
             for code, name, size in dlg.selected_data:
-                if curr_row >= self.table.rowCount(): self.add_row()
-                self.table.setItem(curr_row, 0, QTableWidgetItem(code))
-                self.table.setItem(curr_row, 1, QTableWidgetItem(name))
-                self.table.setItem(curr_row, 2, QTableWidgetItem(size))
-                curr_row += 1
-            self.table.blockSignals(False)
-            self.update_totals()
+                if curr >= self.table.rowCount(): self.add_row()
+                self.table.setItem(curr, 0, QTableWidgetItem(code))
+                self.table.setItem(curr, 1, QTableWidgetItem(name))
+                self.table.setItem(curr, 2, QTableWidgetItem(size))
+                curr += 1
+            self.table.blockSignals(False); self.update_totals()
 
-    def recalculate_row(self, row):
-        boxes_item = self.table.item(row, 4)
-        gross_item = self.table.item(row, 7)
-        if boxes_item and gross_item and boxes_item.text() and gross_item.text():
-            e_box = SettingsManager.get_setting('empty_box_weight', 0.5)
-            e_pallet = SettingsManager.get_setting('empty_pallet_weight', 15.0)
-            bw, nw = calculate_weights(gross_item.text(), boxes_item.text(), e_box, e_pallet)
-            self.table.setItem(row, 5, QTableWidgetItem(str(bw)))
-            self.table.setItem(row, 6, QTableWidgetItem(str(nw)))
+    def recalculate_row(self, r):
+        b, g = self.table.item(r, 4), self.table.item(r, 7)
+        if b and g and b.text() and g.text():
+            bw, nw = calculate_weights(g.text(), b.text(), SettingsManager.get_setting('empty_box_weight', 0.5), SettingsManager.get_setting('empty_pallet_weight', 15.0))
+            self.table.setItem(r, 5, QTableWidgetItem(str(bw)))
+            self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
 
     def update_totals(self):
-        total_boxes = 0
-        total_net = 0.0
-        total_gross = 0.0
+        tb, tn, tg = 0, 0.0, 0.0
         for r in range(self.table.rowCount()):
-            b_item = self.table.item(r, 4)
-            n_item = self.table.item(r, 6)
-            g_item = self.table.item(r, 7)
             try:
-                if b_item and b_item.text(): total_boxes += int(b_item.text())
-                if n_item and n_item.text(): total_net += float(n_item.text())
-                if g_item and g_item.text(): total_gross += float(g_item.text())
+                b = self.table.item(r, 4).text()
+                n = self.table.item(r, 6).text()
+                g = self.table.item(r, 7).text()
+                if b: tb += int(b)
+                if n: tn += float(n)
+                if g: tg += float(g)
             except: pass
-        self.lbl_total_boxes.setText(f"Total Box: {total_boxes}")
-        self.lbl_total_net.setText(f"Total Net Weight: {round(total_net, 2)}")
-        self.lbl_total_gross.setText(f"Total Gross Weight: {round(total_gross, 2)}")
+        self.lbl_total_boxes.setText(str(tb))
+        self.lbl_total_net.setText(str(round(tn, 2)))
+        self.lbl_total_gross.setText(str(round(tg, 2)))
 
     def load_settings(self):
-        settings = SettingsManager.get_all_settings()
-        self.edit_ship_company.setText(settings.get('company_name', ''))
-        self.edit_ship_address.setText(settings.get('company_address', ''))
-        self.edit_ship_tel.setText(settings.get('company_tel', ''))
-        logo_path = settings.get('logo_path', '')
-        if logo_path and os.path.exists(logo_path):
-            pixmap = QPixmap(logo_path)
-            self.lbl_logo.setPixmap(pixmap.scaled(self.lbl_logo.size(), Qt.AspectRatioMode.KeepAspectRatio))
+        s = SettingsManager.get_all_settings()
+        self.edit_ship_company.setText(s.get('company_name', ''))
+        self.edit_ship_address.setText(s.get('company_address', ''))
+        self.edit_ship_tel.setText(s.get('company_tel', ''))
+        lp = s.get('logo_path', '')
+        if lp and os.path.exists(lp):
+            pix = QPixmap(lp)
+            self.lbl_logo.setPixmap(pix.scaled(self.lbl_logo.size(), Qt.AspectRatioMode.KeepAspectRatio))
 
     def open_products(self): ProductDialog(self).exec()
     def open_sizes(self): SizeDialog(self).exec()
@@ -229,27 +236,21 @@ class MainWindow(QMainWindow):
 
     def get_ui_header_info(self):
         return {
-            'doc_no': self.edit_doc_no.text(),
-            'date': self.edit_date.date().toString("dd.MM.yyyy"),
-            'con_company': self.edit_con_company.text(),
-            'con_address': self.edit_con_address.text(),
-            'con_tel': self.edit_con_tel.text(),
-            'ship_company': self.edit_ship_company.text(),
-            'ship_address': self.edit_ship_address.text(),
-            'ship_tel': self.edit_ship_tel.text(),
-            'remarks': self.edit_remarks.toPlainText(),
-            'total_boxes': self.lbl_total_boxes.text().split(':')[-1].strip(),
-            'total_pallets': self.edit_total_pallets.text(),
-            'total_net': self.lbl_total_net.text().split(':')[-1].strip(),
-            'total_gross': self.lbl_total_gross.text().split(':')[-1].strip(),
+            'doc_no': self.edit_doc_no.text(), 'date': self.edit_date.date().toString("dd.MM.yyyy"),
+            'con_company': self.edit_con_company.text(), 'con_address': self.edit_con_address.text(), 'con_tel': self.edit_con_tel.text(),
+            'ship_company': self.edit_ship_company.text(), 'ship_address': self.edit_ship_address.text(), 'ship_tel': self.edit_ship_tel.text(),
+            'incoterms': self.edit_incoterms.text(), 'pol': self.edit_pol.text(), 'pod': self.edit_pod.text(),
+            'origin': self.edit_origin.text(), 'gtip': self.edit_gtip.text(),
+            'total_boxes': self.lbl_total_boxes.text(), 'total_pallets': self.edit_total_pallets.text(),
+            'total_net': self.lbl_total_net.text(), 'total_gross': self.lbl_total_gross.text(),
             'logo_path': SettingsManager.get_setting('logo_path', '')
         }
 
     def get_table_items(self):
         items = []
         for r in range(self.table.rowCount()):
-            row_data = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(8)]
-            if any(row_data): items.append(row_data)
+            row = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(8)]
+            if any(row): items.append(row)
         return items
 
     def export_pdf(self):
