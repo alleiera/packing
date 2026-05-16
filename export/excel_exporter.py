@@ -1,48 +1,60 @@
 import pandas as pd
-from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
-from settings_manager import SettingsManager
+from openpyxl.drawing.image import Image
+import os
 
 class ExcelExporter:
     @staticmethod
-    def export(file_path, header_info, items, language='tr'):
-        # Prepare data
-        if language == 'tr':
-            cols = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Toplam Metre", "Koli Adeti", "Koli Ağırlığı", "Net Ağırlık", "Bürüt Ağırlık"]
-        else:
-            cols = ["Product Code", "Product Name", "Size", "Total Meter", "Box Count", "Box Weight", "Net Weight", "Gross Weight"]
+    def export(file_path, info, items, lang='tr'):
+        cols = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else                ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
 
         df = pd.DataFrame(items, columns=cols)
 
-        # Create Excel with custom formatting to match template
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, startrow=10)
+            df.to_excel(writer, index=False, startrow=22)
+            ws = writer.sheets['Sheet1']
 
-            workbook = writer.book
-            worksheet = writer.sheets['Sheet1']
+            # Header
+            ws['A1'] = "PACKING LIST"
+            ws['A1'].font = Font(bold=True, size=14)
+            ws['A2'] = f"Document no: {info.get('doc_no', '')}"
+            ws['A3'] = f"Date: {info.get('date', '')}"
 
-            # Add Company Info / Logo Placeholder (Real logo insertion needs PIL and openpyxl Image)
-            settings = SettingsManager.get_all_settings()
-            worksheet['A1'] = "PACKING LIST"
-            worksheet['A1'].font = Font(bold=True, size=14)
+            # Logo
+            logo_path = info.get('logo_path', '')
+            if logo_path and os.path.exists(logo_path):
+                try:
+                    img = Image(logo_path)
+                    img.width, img.height = 150, 60
+                    ws.add_image(img, 'F1')
+                except: pass
 
-            worksheet['A2'] = f"Document No: {header_info.get('doc_no', '')}"
-            worksheet['A3'] = f"Date: {header_info.get('date', '')}"
+            # Sections
+            ws['A5'] = "CONSIGNEE"
+            ws['A5'].font = Font(bold=True)
+            ws['A6'] = f"Company: {info.get('con_company', '')}"
+            ws['A7'] = f"Address: {info.get('con_address', '')}"
+            ws['A8'] = f"Tel: {info.get('con_tel', '')}"
 
-            worksheet['A5'] = "CONSIGNEE"
-            worksheet['A5'].font = Font(bold=True)
-            worksheet['A6'] = header_info.get('consignee', '')
+            ws['A10'] = "SHIPPER / EXPORTER"
+            ws['A10'].font = Font(bold=True)
+            ws['A11'] = f"Company: {info.get('ship_company', '')}"
+            ws['A12'] = f"Address: {info.get('ship_address', '')}"
+            ws['A13'] = f"Tel: {info.get('ship_tel', '')}"
 
-            worksheet['E1'] = settings.get('company_name', '')
-            worksheet['E1'].font = Font(bold=True)
-            worksheet['E2'] = settings.get('company_address', '')
-            worksheet['E3'] = settings.get('company_tel', '')
+            ws['A15'] = "REMARKS"
+            ws['A15'].font = Font(bold=True)
+            ws['A16'] = info.get('remarks', '')
 
             # Totals
-            total_row = 10 + len(items) + 1
-            worksheet.cell(row=total_row + 1, column=5, value="TOTAL BOX:")
-            worksheet.cell(row=total_row + 1, column=6, value=header_info.get('total_boxes', 0))
-            worksheet.cell(row=total_row + 2, column=5, value="TOTAL PALLET:")
-            worksheet.cell(row=total_row + 2, column=6, value=header_info.get('total_pallets', 0))
+            tr = 22 + len(items) + 2
+            ws.cell(row=tr, column=5, value="TOTAL BOX:")
+            ws.cell(row=tr, column=6, value=info.get('total_boxes'))
+            ws.cell(row=tr+1, column=5, value="TOTAL PALLET:")
+            ws.cell(row=tr+1, column=6, value=info.get('total_pallets'))
+            ws.cell(row=tr+2, column=5, value="NET WEIGHT:")
+            ws.cell(row=tr+2, column=6, value=info.get('total_net'))
+            ws.cell(row=tr+3, column=5, value="GROSS WEIGHT:")
+            ws.cell(row=tr+3, column=6, value=info.get('total_gross'))
 
         return True
