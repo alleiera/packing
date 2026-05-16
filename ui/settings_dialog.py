@@ -20,7 +20,8 @@ class SettingsDialog(QDialog):
             ('company_tel', 'Tel:'),
             ('logo_path', 'Logo Path / Logo Yolu:'),
             ('empty_box_weight', 'Empty Box Weight / Boş Koli Ağırlığı:'),
-            ('empty_pallet_weight', 'Empty Pallet Weight / Boş Palet Ağırlığı:')
+            ('empty_pallet_weight', 'Empty Pallet Weight / Boş Palet Ağırlığı:'),
+            ('default_gtip', 'Default GTIP Code / Varsayılan GTIP Kodu:')
         ]
 
         for i, (key, label) in enumerate(fields):

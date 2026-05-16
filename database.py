@@ -77,7 +77,8 @@ def init_db():
         ('logo_path', ''),
         ('empty_box_weight', '0.5'),
         ('empty_pallet_weight', '15.0'),
-        ('language', 'tr')
+        ('language', 'tr'),
+        ('default_gtip', '')
     ]
 
     for key, value in default_settings:

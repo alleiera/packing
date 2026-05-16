@@ -224,6 +224,7 @@ class MainWindow(QMainWindow):
         self.edit_ship_company.setText(s.get('company_name', ''))
         self.edit_ship_address.setText(s.get('company_address', ''))
         self.edit_ship_tel.setText(s.get('company_tel', ''))
+        self.edit_gtip.setText(s.get('default_gtip', ''))
         lp = s.get('logo_path', '')
         if lp and os.path.exists(lp):
             pix = QPixmap(lp)
