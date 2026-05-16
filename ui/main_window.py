@@ -143,6 +143,9 @@ class MainWindow(QMainWindow):
         copy_action = QAction("Copy / Kopyala (Ctrl+C)", self); copy_action.triggered.connect(self.copy_to_clipboard); menu.addAction(copy_action)
         paste_action = QAction("Paste / Yapıştır (Ctrl+V)", self); paste_action.triggered.connect(self.paste_from_clipboard); menu.addAction(paste_action)
         menu.addSeparator()
+        delete_action = QAction("Clear Selection / Seçimi Temizle (Delete)", self); delete_action.triggered.connect(self.clear_selected_cells); menu.addAction(delete_action)
+        clear_row_action = QAction("Clear Row / Satırı Temizle (Shift+Delete)", self); clear_row_action.triggered.connect(self.clear_current_row); menu.addAction(clear_row_action)
+        menu.addSeparator()
         fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self); fill_down_action.triggered.connect(self.fill_down); menu.addAction(fill_down_action)
         duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self); duplicate_row_action.triggered.connect(self.duplicate_row); menu.addAction(duplicate_row_action)
         menu.exec(self.table.viewport().mapToGlobal(pos))
@@ -179,6 +182,25 @@ class MainWindow(QMainWindow):
                     if c in [4, 7]: self.recalculate_row(r)
         self.table.blockSignals(False); self.update_totals()
 
+    def clear_selected_cells(self):
+        ranges = self.table.selectedRanges()
+        self.table.blockSignals(True)
+        for rng in ranges:
+            for r in range(rng.topRow(), rng.bottomRow() + 1):
+                for c in range(rng.leftColumn(), rng.rightColumn() + 1):
+                    self.table.setItem(r, c, QTableWidgetItem(""))
+                    if c in [4, 7]: self.recalculate_row(r)
+        self.table.blockSignals(False); self.update_totals()
+
+    def clear_current_row(self):
+        curr = self.table.currentRow()
+        if curr < 0: return
+        self.table.blockSignals(True)
+        for c in range(8):
+            self.table.setItem(curr, c, QTableWidgetItem(""))
+        self.recalculate_row(curr)
+        self.table.blockSignals(False); self.update_totals()
+
     def fill_down(self):
         selected_ranges = self.table.selectedRanges()
         if not selected_ranges: return
@@ -205,11 +227,16 @@ class MainWindow(QMainWindow):
         self.table.blockSignals(False); self.update_totals()
 
     def keyPressEvent(self, event):
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+        ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        shift = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        if ctrl:
             if event.key() == Qt.Key.Key_C: self.copy_to_clipboard()
             elif event.key() == Qt.Key.Key_V: self.paste_from_clipboard()
             elif event.key() == Qt.Key.Key_D: self.fill_down()
             else: super().keyPressEvent(event)
+        elif event.key() == Qt.Key.Key_Delete:
+            if shift: self.clear_current_row()
+            else: self.clear_selected_cells()
         else: super().keyPressEvent(event)
 
     def recalculate_row(self, r):
