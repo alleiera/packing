@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Packing List Generator")
         self.setMinimumSize(1100, 900)
         self.current_lang = SettingsManager.get_setting('language', 'tr')
+        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
         self.init_ui()
         self.load_settings()
         self.init_table_rows()
