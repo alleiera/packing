@@ -9,12 +9,9 @@ class PDFExporter(FPDF):
         return text
 
     def header_section(self, info):
-        # Logo fixed at the right, smaller size
         lp = info.get('logo_path', '')
         if lp and os.path.exists(lp):
             self.image(lp, x=155, y=10, w=45)
-
-        # Doc info table - smaller fonts and heights
         self.set_font('helvetica', 'B', 10)
         self.cell(130, 6, 'PACKING LIST', 1, 1, 'L')
         self.set_font('helvetica', '', 8)
@@ -32,7 +29,6 @@ class PDFExporter(FPDF):
         self.cell(30, 4.5, 'Company:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('con_company', '')), 1, 1)
         self.cell(30, 4.5, 'Address:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('con_address', '')), 1, 1)
         self.cell(30, 4.5, 'Tel:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('con_tel', '')), 1, 1)
-
         self.ln(1)
         self.set_font('helvetica', 'B', 9)
         self.cell(0, 5, 'SHIPPER / EXPORTER', 1, 1, 'L', True)
@@ -40,7 +36,6 @@ class PDFExporter(FPDF):
         self.cell(30, 4.5, 'Company:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('ship_company', '')), 1, 1)
         self.cell(30, 4.5, 'Address:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('ship_address', '')), 1, 1)
         self.cell(30, 4.5, 'Tel:', 1, 0); self.cell(160, 4.5, self.tr_fix(info.get('ship_tel', '')), 1, 1)
-
         self.ln(1)
         self.set_font('helvetica', 'B', 9)
         self.cell(0, 5, 'REMARKS', 1, 1, 'L', True)
@@ -74,6 +69,21 @@ class PDFExporter(FPDF):
         self.set_x(140)
         self.cell(30, 5, 'GROSS WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_gross', 0)), 1, 1, 'C')
 
+    def draw_page_footer(self, info):
+        self.set_y(-30)
+        self.set_draw_color(255, 0, 0) # Red
+        self.line(20, self.get_y(), 190, self.get_y())
+        self.ln(2)
+        self.set_text_color(50, 50, 50)
+        self.set_font('helvetica', 'B', 9)
+        self.cell(0, 5, self.tr_fix(info.get('ship_company', '')), 0, 1, 'C')
+        self.set_font('helvetica', '', 8)
+        addr = self.tr_fix(info.get('ship_address', ''))
+        tel = info.get('ship_tel', '')
+        email = "info@hscplastik.com"
+        footer_text = f"Adres: {addr} | Tel: {tel} | E-posta: {email}"
+        self.cell(0, 5, footer_text, 0, 1, 'C')
+
 def export_to_pdf(fp, info, items, lang='tr'):
     pdf = PDFExporter()
     pdf.add_page()
@@ -82,4 +92,5 @@ def export_to_pdf(fp, info, items, lang='tr'):
     hs = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else          ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
     pdf.draw_table(hs, items)
     pdf.draw_totals(info)
+    pdf.draw_page_footer(info) # Call at the end of content
     pdf.output(fp)
