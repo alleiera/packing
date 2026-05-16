@@ -10,14 +10,20 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Products table
+    # Products table (Removed UNIQUE from code)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            code TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            size TEXT,
-            meter_per_box REAL
+            code TEXT NOT NULL,
+            name TEXT NOT NULL
+        )
+    ''')
+
+    # Sizes table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sizes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            size_value TEXT UNIQUE NOT NULL
         )
     ''')
 
