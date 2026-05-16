@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
+                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QAbstractItemView,
                              QMessageBox, QFileDialog, QApplication)
 from database import get_connection
 import pandas as pd
@@ -41,6 +41,7 @@ class ProductDialog(QDialog):
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["ID", "Code / Kod", "Name / Ad"])
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.table)
 
         # Bottom buttons

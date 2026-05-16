@@ -33,6 +33,7 @@ class SelectionDialog(QDialog):
         self.table_products.setColumnCount(3)
         self.table_products.setHorizontalHeaderLabels(["", "Code / Kod", "Name / Ad"])
         self.table_products.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table_products.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_products.setColumnWidth(0, 30)
         layout.addWidget(self.table_products)
 

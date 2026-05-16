@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout,
-                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox)
+                             QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QAbstractItemView, QMessageBox)
 from database import get_connection
 
 class SizeDialog(QDialog):
@@ -26,6 +26,7 @@ class SizeDialog(QDialog):
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels(["ID", "Size / Ölçü"])
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.table)
 
         btn_layout = QHBoxLayout()
