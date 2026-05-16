@@ -8,7 +8,7 @@ class ProductDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Product Management / Ürün Yönetimi")
-        self.setMinimumSize(600, 500)
+        self.setMinimumSize(600, 550)
         self.init_ui()
         self.load_products()
 
@@ -32,6 +32,11 @@ class ProductDialog(QDialog):
         bulk_layout.addWidget(btn_import_excel); bulk_layout.addWidget(btn_paste_bulk)
         layout.addLayout(bulk_layout)
 
+        # Search
+        self.search_input = QLineEdit(); self.search_input.setPlaceholderText("Search / Ara...")
+        self.search_input.textChanged.connect(self.filter_table)
+        layout.addWidget(self.search_input)
+
         # Table
         self.table = QTableWidget()
         self.table.setColumnCount(3)
@@ -54,6 +59,13 @@ class ProductDialog(QDialog):
         for i, row in enumerate(rows):
             for j, val in enumerate(row): self.table.setItem(i, j, QTableWidgetItem(str(val)))
 
+    def filter_table(self):
+        query = self.search_input.text().lower()
+        for i in range(self.table.rowCount()):
+            code = self.table.item(i, 1).text().lower()
+            name = self.table.item(i, 2).text().lower()
+            self.table.setRowHidden(i, query not in code and query not in name)
+
     def add_product(self):
         code, name = self.code_input.text(), self.name_input.text()
         if not code or not name: return
@@ -65,7 +77,6 @@ class ProductDialog(QDialog):
         if not file_path: return
         try:
             df = pd.read_excel(file_path)
-            # Expecting first two columns to be Code and Name
             data = df.iloc[:, :2].values.tolist()
             self.save_to_db(data)
             QMessageBox.information(self, "Success", f"Imported {len(data)} products.")
@@ -78,9 +89,7 @@ class ProductDialog(QDialog):
         try:
             lines = text.strip().split("\n")
             data = [line.split("\t") for line in lines if "\t" in line]
-            if not data:
-                QMessageBox.warning(self, "Warning", "Please copy data with TAB separation (like from Excel).")
-                return
+            if not data: return
             self.save_to_db(data)
             QMessageBox.information(self, "Success", f"Pasted {len(data)} products.")
         except Exception as e:
@@ -90,8 +99,7 @@ class ProductDialog(QDialog):
         try:
             conn = get_connection(); cursor = conn.cursor()
             cursor.executemany("INSERT INTO products (code, name) VALUES (?, ?)", product_list)
-            conn.commit(); conn.close()
-            self.load_products()
+            conn.commit(); conn.close(); self.load_products()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Database error: {e}")
 
