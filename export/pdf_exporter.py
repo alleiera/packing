@@ -70,19 +70,24 @@ class PDFExporter(FPDF):
         self.cell(30, 5, 'GROSS WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_gross', 0)), 1, 1, 'C')
 
     def draw_page_footer(self, info):
-        self.set_y(-30)
-        self.set_draw_color(255, 0, 0) # Red
-        self.line(20, self.get_y(), 190, self.get_y())
+        # Disable auto page break temporarily
+        self.set_auto_page_break(False)
+        self.set_y(-25)
+        self.set_draw_color(255, 0, 0)
+        self.line(10, self.get_y(), 200, self.get_y())
         self.ln(2)
         self.set_text_color(50, 50, 50)
-        self.set_font('helvetica', 'B', 9)
-        self.cell(0, 5, self.tr_fix(info.get('ship_company', '')), 0, 1, 'C')
-        self.set_font('helvetica', '', 8)
+        self.set_font('helvetica', 'B', 8)
+        self.cell(0, 4, self.tr_fix(info.get('ship_company', '')), 0, 1, 'C')
+        self.set_font('helvetica', '', 7)
         addr = self.tr_fix(info.get('ship_address', ''))
         tel = info.get('ship_tel', '')
         email = "info@hscplastik.com"
-        footer_text = f"Adres: {addr} | Tel: {tel} | E-posta: {email}"
-        self.cell(0, 5, footer_text, 0, 1, 'C')
+        web = "www.hscplastik.com"
+        footer_text = f"Adres: {addr} | Tel: {tel} | E-posta: {email} | Web: {web}"
+        self.cell(0, 4, footer_text, 0, 1, 'C')
+        # Re-enable auto page break
+        self.set_auto_page_break(True, margin=15)
 
 def export_to_pdf(fp, info, items, lang='tr'):
     pdf = PDFExporter()
@@ -92,5 +97,5 @@ def export_to_pdf(fp, info, items, lang='tr'):
     hs = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else          ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
     pdf.draw_table(hs, items)
     pdf.draw_totals(info)
-    pdf.draw_page_footer(info) # Call at the end of content
+    pdf.draw_page_footer(info)
     pdf.output(fp)
