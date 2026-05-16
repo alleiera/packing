@@ -6,28 +6,22 @@ class ProductDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Product Management / Ürün Yönetimi")
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(500, 400)
         self.init_ui()
         self.load_products()
 
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # Form for adding/editing
+        # Form for adding
         form_layout = QHBoxLayout()
         self.code_input = QLineEdit()
         self.code_input.setPlaceholderText("Code / Kod")
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Name / Ad")
-        self.size_input = QLineEdit()
-        self.size_input.setPlaceholderText("Size / Ölçü")
-        self.meter_input = QLineEdit()
-        self.meter_input.setPlaceholderText("Meter per Box / Koli Metrajı")
 
         form_layout.addWidget(self.code_input)
         form_layout.addWidget(self.name_input)
-        form_layout.addWidget(self.size_input)
-        form_layout.addWidget(self.meter_input)
 
         btn_add = QPushButton("Add / Ekle")
         btn_add.clicked.connect(self.add_product)
@@ -37,8 +31,8 @@ class ProductDialog(QDialog):
 
         # Table
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Code", "Name", "Size", "Meter/Box"])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["ID", "Code / Kod", "Name / Ad"])
         layout.addWidget(self.table)
 
         # Bottom buttons
@@ -57,7 +51,7 @@ class ProductDialog(QDialog):
     def load_products(self):
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, code, name, size, meter_per_box FROM products")
+        cursor.execute("SELECT id, code, name FROM products")
         rows = cursor.fetchall()
         conn.close()
 
@@ -69,8 +63,6 @@ class ProductDialog(QDialog):
     def add_product(self):
         code = self.code_input.text()
         name = self.name_input.text()
-        size = self.size_input.text()
-        meter = self.meter_input.text()
 
         if not code or not name:
             QMessageBox.warning(self, "Error", "Code and Name are required!")
@@ -79,28 +71,20 @@ class ProductDialog(QDialog):
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO products (code, name, size, meter_per_box) VALUES (?, ?, ?, ?)",
-                           (code, name, size, meter))
+            cursor.execute("INSERT INTO products (code, name) VALUES (?, ?)", (code, name))
             conn.commit()
             conn.close()
             self.load_products()
             self.code_input.clear()
             self.name_input.clear()
-            self.size_input.clear()
-            self.meter_input.clear()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not add product: {e}")
 
     def delete_product(self):
         selected = self.table.currentRow()
-        if selected < 0:
-            return
-
+        if selected < 0: return
         product_id = self.table.item(selected, 0).text()
-
-        reply = QMessageBox.question(self, 'Delete', 'Are you sure you want to delete this product?',
-                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
+        reply = QMessageBox.question(self, 'Delete', 'Are you sure?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             conn = get_connection()
             cursor = conn.cursor()
