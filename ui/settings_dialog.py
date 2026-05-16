@@ -1,18 +1,21 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QGridLayout, QLabel,
-                             QLineEdit, QPushButton, QFileDialog, QHBoxLayout)
+                             QLineEdit, QPushButton, QFileDialog, QHBoxLayout, QFrame)
+from PyQt6.QtCore import Qt
 from settings_manager import SettingsManager
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings / Ayarlar")
+        self.setMinimumWidth(500)
         self.init_ui()
         self.load_settings()
 
     def init_ui(self):
         layout = QVBoxLayout()
-        grid = QGridLayout()
 
+        # Grid for settings fields
+        grid = QGridLayout()
         self.inputs = {}
         fields = [
             ('company_name', 'Company Name / Şirket Adı:'),
@@ -29,13 +32,28 @@ class SettingsDialog(QDialog):
             line_edit = QLineEdit()
             grid.addWidget(line_edit, i, 1)
             self.inputs[key] = line_edit
-
             if key == 'logo_path':
                 btn_browse = QPushButton("...")
                 btn_browse.clicked.connect(self.browse_logo)
                 grid.addWidget(btn_browse, i, 2)
 
         layout.addLayout(grid)
+
+        # Shortcuts Info Section
+        layout.addWidget(QLabel("<br><b>Keyboard Shortcuts / Klavye Kısayolları:</b>"))
+        line = QFrame(); line.setFrameShape(QFrame.Shape.HLine); line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+
+        shortcuts_text = (
+            "• <b>Ctrl + C :</b> Copy Selection / Seçimi Kopyala<br>"
+            "• <b>Ctrl + V :</b> Paste Clipboard / Panoyu Yapıştır<br>"
+            "• <b>Ctrl + D :</b> Fill Column Down / Seçilen Sütunu Aşağı Kopyala<br>"
+            "• <b>Delete :</b> Clear Selected Cells / Seçili Hücreleri Temizle<br>"
+            "• <b>Shift + Delete :</b> Clear Entire Row / Satırı Tamamen Temizle"
+        )
+        lbl_shortcuts = QLabel(shortcuts_text)
+        lbl_shortcuts.setStyleSheet("color: #555; padding: 5px;")
+        layout.addWidget(lbl_shortcuts)
 
         btn_layout = QHBoxLayout()
         self.btn_save = QPushButton("Save / Kaydet")
