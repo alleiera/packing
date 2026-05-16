@@ -3,9 +3,9 @@ import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTableWidget, QTableWidgetItem, QPushButton,
                              QLabel, QLineEdit, QHeaderView, QTextEdit,
-                             QComboBox, QDateEdit, QGridLayout, QFrame)
+                             QComboBox, QDateEdit, QGridLayout, QFrame, QMenu)
 from PyQt6.QtCore import Qt, QDate
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QAction
 from database import get_connection
 from ui.settings_dialog import SettingsDialog
 from ui.product_dialog import ProductDialog
@@ -31,58 +31,37 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
 
         menu_layout = QHBoxLayout()
-        self.btn_products = QPushButton("Products / Ürünler")
-        self.btn_products.clicked.connect(self.open_products)
-        self.btn_sizes = QPushButton("Sizes / Ölçüler")
-        self.btn_sizes.clicked.connect(self.open_sizes)
-        self.btn_settings = QPushButton("Settings / Ayarlar")
-        self.btn_settings.clicked.connect(self.open_settings)
-        self.btn_lang = QPushButton("TR / EN")
-        self.btn_lang.clicked.connect(self.toggle_language)
-        menu_layout.addWidget(self.btn_products)
-        menu_layout.addWidget(self.btn_sizes)
-        menu_layout.addWidget(self.btn_settings)
-        menu_layout.addStretch()
-        menu_layout.addWidget(self.btn_lang)
+        self.btn_products = QPushButton("Products / Ürünler"); self.btn_products.clicked.connect(self.open_products)
+        self.btn_sizes = QPushButton("Sizes / Ölçüler"); self.btn_sizes.clicked.connect(self.open_sizes)
+        self.btn_settings = QPushButton("Settings / Ayarlar"); self.btn_settings.clicked.connect(self.open_settings)
+        self.btn_lang = QPushButton("TR / EN"); self.btn_lang.clicked.connect(self.toggle_language)
+        menu_layout.addWidget(self.btn_products); menu_layout.addWidget(self.btn_sizes); menu_layout.addWidget(self.btn_settings)
+        menu_layout.addStretch(); menu_layout.addWidget(self.btn_lang)
         main_layout.addLayout(menu_layout)
 
         header_hbox = QHBoxLayout()
         doc_info_grid = QGridLayout()
         doc_info_grid.addWidget(QLabel("PACKING LIST"), 0, 0, 1, 2)
         doc_info_grid.addWidget(QLabel("Document No:"), 1, 0)
-        self.edit_doc_no = QLineEdit()
-        doc_info_grid.addWidget(self.edit_doc_no, 1, 1)
+        self.edit_doc_no = QLineEdit(); doc_info_grid.addWidget(self.edit_doc_no, 1, 1)
         doc_info_grid.addWidget(QLabel("Date:"), 2, 0)
-        self.edit_date = QDateEdit(QDate.currentDate())
-        self.edit_date.setCalendarPopup(True)
-        doc_info_grid.addWidget(self.edit_date, 2, 1)
-        header_hbox.addLayout(doc_info_grid)
-        header_hbox.addStretch()
-        self.lbl_logo = QLabel()
-        self.lbl_logo.setFixedSize(150, 60)
-        self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_logo.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
-        header_hbox.addWidget(self.lbl_logo)
+        self.edit_date = QDateEdit(QDate.currentDate()); self.edit_date.setCalendarPopup(True); doc_info_grid.addWidget(self.edit_date, 2, 1)
+        header_hbox.addLayout(doc_info_grid); header_hbox.addStretch()
+        self.lbl_logo = QLabel(); self.lbl_logo.setFixedSize(150, 60); self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter); self.lbl_logo.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain); header_hbox.addWidget(self.lbl_logo)
         main_layout.addLayout(header_hbox)
 
         main_layout.addWidget(QLabel("<b>CONSIGNE</b>"))
         con_grid = QGridLayout()
-        con_grid.addWidget(QLabel("Company:"), 0, 0)
-        self.edit_con_company = QLineEdit(); con_grid.addWidget(self.edit_con_company, 0, 1)
-        con_grid.addWidget(QLabel("Address:"), 1, 0)
-        self.edit_con_address = QLineEdit(); con_grid.addWidget(self.edit_con_address, 1, 1)
-        con_grid.addWidget(QLabel("Tel:"), 2, 0)
-        self.edit_con_tel = QLineEdit(); con_grid.addWidget(self.edit_con_tel, 2, 1)
+        self.edit_con_company = QLineEdit(); con_grid.addWidget(QLabel("Company:"), 0, 0); con_grid.addWidget(self.edit_con_company, 0, 1)
+        self.edit_con_address = QLineEdit(); con_grid.addWidget(QLabel("Address:"), 1, 0); con_grid.addWidget(self.edit_con_address, 1, 1)
+        self.edit_con_tel = QLineEdit(); con_grid.addWidget(QLabel("Tel:"), 2, 0); con_grid.addWidget(self.edit_con_tel, 2, 1)
         main_layout.addLayout(con_grid)
 
         main_layout.addWidget(QLabel("<b>SHIPPER / EXPORTER</b>"))
         ship_grid = QGridLayout()
-        ship_grid.addWidget(QLabel("Company:"), 0, 0)
-        self.edit_ship_company = QLineEdit(); ship_grid.addWidget(self.edit_ship_company, 0, 1)
-        ship_grid.addWidget(QLabel("Address:"), 1, 0)
-        self.edit_ship_address = QLineEdit(); ship_grid.addWidget(self.edit_ship_address, 1, 1)
-        ship_grid.addWidget(QLabel("Tel:"), 2, 0)
-        self.edit_ship_tel = QLineEdit(); ship_grid.addWidget(self.edit_ship_tel, 2, 1)
+        self.edit_ship_company = QLineEdit(); ship_grid.addWidget(QLabel("Company:"), 0, 0); ship_grid.addWidget(self.edit_ship_company, 0, 1)
+        self.edit_ship_address = QLineEdit(); ship_grid.addWidget(QLabel("Address:"), 1, 0); ship_grid.addWidget(self.edit_ship_address, 1, 1)
+        self.edit_ship_tel = QLineEdit(); ship_grid.addWidget(QLabel("Tel:"), 2, 0); ship_grid.addWidget(self.edit_ship_tel, 2, 1)
         main_layout.addLayout(ship_grid)
 
         main_layout.addWidget(QLabel("<b>REMARKS / EXTRA INFO</b>"))
@@ -95,29 +74,26 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(extra_grid)
 
         self.table = QTableWidget()
-        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
         self.table.setColumnCount(8)
         self.update_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.itemChanged.connect(self.on_item_changed)
         self.table.cellDoubleClicked.connect(self.on_cell_double_clicked)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_context_menu)
         main_layout.addWidget(self.table)
 
         footer_hbox = QHBoxLayout()
-        self.btn_remove_row = QPushButton("- Row Sil")
-        self.btn_remove_row.clicked.connect(self.remove_row)
-        footer_hbox.addWidget(self.btn_remove_row)
+        self.btn_remove_row = QPushButton("- Row Sil"); self.btn_remove_row.clicked.connect(self.remove_row); footer_hbox.addWidget(self.btn_remove_row)
         footer_hbox.addStretch()
         totals_grid = QGridLayout()
         totals_grid.addWidget(QLabel("TOTAL BOX:"), 0, 0); self.lbl_total_boxes = QLabel("0"); totals_grid.addWidget(self.lbl_total_boxes, 0, 1)
         totals_grid.addWidget(QLabel("TOTAL PALLET:"), 1, 0); self.edit_total_pallets = QLineEdit(); self.edit_total_pallets.setFixedWidth(50); self.edit_total_pallets.textChanged.connect(self.update_totals); totals_grid.addWidget(self.edit_total_pallets, 1, 1)
         totals_grid.addWidget(QLabel("NET WEIGHT:"), 2, 0); self.lbl_total_net = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_net, 2, 1)
         totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 3, 0); self.lbl_total_gross = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_gross, 3, 1)
-        footer_hbox.addLayout(totals_grid)
-        main_layout.addLayout(footer_hbox)
+        footer_hbox.addLayout(totals_grid); main_layout.addLayout(footer_hbox)
 
-        exp_layout = QHBoxLayout()
-        exp_layout.addStretch()
+        exp_layout = QHBoxLayout(); exp_layout.addStretch()
         self.btn_export_pdf = QPushButton("Export PDF"); self.btn_export_pdf.clicked.connect(self.export_pdf)
         self.btn_export_excel = QPushButton("Export Excel"); self.btn_export_excel.clicked.connect(self.export_excel)
         exp_layout.addWidget(self.btn_export_pdf); exp_layout.addWidget(self.btn_export_excel)
@@ -131,12 +107,10 @@ class MainWindow(QMainWindow):
 
     def toggle_language(self):
         self.current_lang = 'en' if self.current_lang == 'tr' else 'tr'
-        SettingsManager.save_setting('language', self.current_lang)
-        self.update_headers()
+        SettingsManager.save_setting('language', self.current_lang); self.update_headers()
 
     def add_row(self):
-        r = self.table.rowCount()
-        self.table.insertRow(r)
+        r = self.table.rowCount(); self.table.insertRow(r)
         for i in range(8): self.table.setItem(r, i, QTableWidgetItem(""))
 
     def remove_row(self):
@@ -151,29 +125,67 @@ class MainWindow(QMainWindow):
         self.table.blockSignals(False)
 
     def on_cell_double_clicked(self, r, c):
-        if c == 2: # Size Column
+        if c == 2: # Size
             dlg = SizeSelectionDialog(self)
-            if dlg.exec():
-                self.table.setItem(r, 2, QTableWidgetItem(dlg.selected_size))
-        elif c in [0, 1]: # Product Code or Name
+            if dlg.exec(): self.table.setItem(r, 2, QTableWidgetItem(dlg.selected_size))
+        elif c in [0, 1]: # Product
             dlg = SelectionDialog(self)
             if dlg.exec():
-                self.table.blockSignals(True)
-                curr = r
+                self.table.blockSignals(True); curr = r
                 for code, name, size in dlg.selected_data:
                     if curr >= self.table.rowCount(): self.add_row()
-                    self.table.setItem(curr, 0, QTableWidgetItem(code))
-                    self.table.setItem(curr, 1, QTableWidgetItem(name))
-                    self.table.setItem(curr, 2, QTableWidgetItem(size))
+                    self.table.setItem(curr, 0, QTableWidgetItem(code)); self.table.setItem(curr, 1, QTableWidgetItem(name)); self.table.setItem(curr, 2, QTableWidgetItem(size))
                     curr += 1
                 self.table.blockSignals(False); self.update_totals()
+
+    def show_context_menu(self, pos):
+        menu = QMenu()
+        fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self)
+        fill_down_action.triggered.connect(self.fill_down)
+        menu.addAction(fill_down_action)
+
+        duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self)
+        duplicate_row_action.triggered.connect(self.duplicate_row)
+        menu.addAction(duplicate_row_action)
+
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def fill_down(self):
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges: return
+        self.table.blockSignals(True)
+        for rng in selected_ranges:
+            top_row = rng.topRow()
+            for col in range(rng.leftColumn(), rng.rightColumn() + 1):
+                top_val = self.table.item(top_row, col).text() if self.table.item(top_row, col) else ""
+                for row in range(top_row + 1, rng.bottomRow() + 1):
+                    self.table.setItem(row, col, QTableWidgetItem(top_val))
+                    if col in [4, 7]: self.recalculate_row(row)
+        self.table.blockSignals(False); self.update_totals()
+
+    def duplicate_row(self):
+        curr = self.table.currentRow()
+        if curr < 0: return
+        self.table.blockSignals(True)
+        row_data = [self.table.item(curr, i).text() if self.table.item(curr, i) else "" for i in range(8)]
+        target = curr + 1
+        if target >= self.table.rowCount(): self.add_row()
+        for i, val in enumerate(row_data):
+            self.table.setItem(target, i, QTableWidgetItem(val))
+        self.recalculate_row(target)
+        self.table.blockSignals(False); self.update_totals()
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_D:
+            self.fill_down()
+        else:
+            super().keyPressEvent(event)
 
     def recalculate_row(self, r):
         b, g = self.table.item(r, 4), self.table.item(r, 7)
         if b and g and b.text() and g.text():
             bw, nw = calculate_weights(g.text(), b.text(), SettingsManager.get_setting('empty_box_weight', 0.5), SettingsManager.get_setting('empty_pallet_weight', 15.0))
-            self.table.setItem(r, 5, QTableWidgetItem(str(bw)))
-            self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
+            self.table.setItem(r, 5, QTableWidgetItem(str(bw))); self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
 
     def update_totals(self):
         tb, tn, tg = 0, 0.0, 0.0
