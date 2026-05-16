@@ -60,13 +60,13 @@ class PDFExporter(FPDF):
     def draw_totals(self, info):
         self.ln(3)
         self.set_font('helvetica', 'B', 9)
-        self.set_x(140)
+        self.set_x(150)
         self.cell(30, 5, 'TOTAL BOX:', 1, 0); self.cell(20, 5, str(info.get('total_boxes', 0)), 1, 1, 'C')
-        self.set_x(140)
+        self.set_x(150)
         self.cell(30, 5, 'TOTAL PALLET:', 1, 0); self.cell(20, 5, str(info.get('total_pallets', 0)), 1, 1, 'C')
-        self.set_x(140)
+        self.set_x(150)
         self.cell(30, 5, 'NET WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_net', 0)), 1, 1, 'C')
-        self.set_x(140)
+        self.set_x(150)
         self.cell(30, 5, 'GROSS WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_gross', 0)), 1, 1, 'C')
 
     def draw_page_footer(self, info):
