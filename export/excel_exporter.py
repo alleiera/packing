@@ -20,7 +20,7 @@ class ExcelExporter:
             lp = info.get('logo_path', '')
             if lp and os.path.exists(lp):
                 try:
-                    img = Image(lp); img.width, img.height = 180, 70
+                    img = Image(lp); img.width, img.height = 135, 52
                     ws.add_image(img, 'F1')
                 except: pass
 

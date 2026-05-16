@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         header_hbox.addStretch()
 
         self.lbl_logo = QLabel()
-        self.lbl_logo.setFixedSize(200, 80)
+        self.lbl_logo.setFixedSize(150, 60)
         self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_logo.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
         header_hbox.addWidget(self.lbl_logo)

@@ -12,7 +12,7 @@ class PDFExporter(FPDF):
         # Logo fixed at the right
         lp = info.get('logo_path', '')
         if lp and os.path.exists(lp):
-            self.image(lp, x=140, y=10, w=60)
+            self.image(lp, x=155, y=10, w=45)
 
         # Doc info table restricted in width to avoid logo
         self.set_font('helvetica', 'B', 12)
