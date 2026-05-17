@@ -119,6 +119,29 @@ class MainWindow(QMainWindow):
         curr = self.table.currentRow()
         if curr >= 0: self.table.removeRow(curr); self.update_totals()
 
+    def insert_empty_row(self):
+        curr = self.table.currentRow()
+        if curr < 0: return
+        self.table.blockSignals(True)
+        self.table.insertRow(curr)
+        for i in range(8): self.table.setItem(curr, i, QTableWidgetItem(""))
+        self.table.blockSignals(False)
+        self.update_totals()
+
+    def ensure_empty_row(self):
+        self.table.blockSignals(True)
+        last_row = self.table.rowCount() - 1
+        has_data = False
+        if last_row >= 0:
+            for c in range(self.table.columnCount()):
+                item = self.table.item(last_row, c)
+                if item and item.text().strip():
+                    has_data = True
+                    break
+        if has_data or last_row < 0:
+            self.add_row()
+        self.table.blockSignals(False)
+
     def on_item_changed(self, item):
         self.table.blockSignals(True)
         r, c = item.row(), item.column()
@@ -129,9 +152,9 @@ class MainWindow(QMainWindow):
             if evaluated_text != item.text():
                 item.setText(evaluated_text)
 
-        if r == self.table.rowCount()-1 and item.text(): self.add_row()
-        if c in [4, 7]: self.recalculate_row(r); self.update_totals()
+        if c in [4, 7]: self.recalculate_row(r)
         self.table.blockSignals(False)
+        self.update_totals() # This will now trigger ensure_empty_row
 
     def on_cell_double_clicked(self, r, c):
         if c == 2: # Size
@@ -154,6 +177,7 @@ class MainWindow(QMainWindow):
         menu.addSeparator()
         delete_action = QAction("Clear Selection / Seçimi Temizle (Delete)", self); delete_action.triggered.connect(self.clear_selected_cells); menu.addAction(delete_action)
         clear_row_action = QAction("Clear Row / Satırı Temizle (Shift+Delete)", self); clear_row_action.triggered.connect(self.clear_current_row); menu.addAction(clear_row_action)
+        insert_row_action = QAction("Insert Row / Araya Satır Ekle (Shift+Insert)", self); insert_row_action.triggered.connect(self.insert_empty_row); menu.addAction(insert_row_action)
         menu.addSeparator()
         fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self); fill_down_action.triggered.connect(self.fill_down); menu.addAction(fill_down_action)
         duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self); duplicate_row_action.triggered.connect(self.duplicate_row); menu.addAction(duplicate_row_action)
@@ -248,6 +272,8 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key.Key_Delete:
             if shift: self.clear_current_row()
             else: self.clear_selected_cells()
+        elif event.key() == Qt.Key.Key_Insert and shift:
+            self.insert_empty_row()
         else: super().keyPressEvent(event)
 
     def recalculate_row(self, r):
@@ -267,6 +293,7 @@ class MainWindow(QMainWindow):
                 if g: tg += float(g)
             except: pass
         self.lbl_total_boxes.setText(str(tb)); self.lbl_total_meters.setText(str(round(tm, 2))); self.lbl_total_net.setText(str(round(tn, 2))); self.lbl_total_gross.setText(str(round(tg, 2)))
+        self.ensure_empty_row()
 
     def load_settings(self):
         s = SettingsManager.get_all_settings()
