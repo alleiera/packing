@@ -40,6 +40,7 @@ class SelectionDialog(QDialog):
         self.table_products.setColumnWidth(0, 30)
         self.table_products.installEventFilter(self)
         self.table_products.viewport().installEventFilter(self)
+        self.table_products.cellDoubleClicked.connect(self.on_cell_double_clicked)
         layout.addWidget(self.table_products)
 
         # Buttons
@@ -102,6 +103,9 @@ class SelectionDialog(QDialog):
             self.search_input.setFocus()
         else:
             super().keyPressEvent(event)
+
+    def on_cell_double_clicked(self, row, column):
+        self.handle_ok()
 
     def handle_ok(self):
         size = self.combo_size.currentText()
