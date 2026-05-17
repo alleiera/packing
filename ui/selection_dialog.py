@@ -105,10 +105,21 @@ class SelectionDialog(QDialog):
 
     def handle_ok(self):
         size = self.combo_size.currentText()
+        has_checked = False
+
         for i in range(self.table_products.rowCount()):
             item = self.table_products.item(i, 0)
             if item.checkState() == Qt.CheckState.Checked:
+                has_checked = True
                 code = self.table_products.item(i, 1).text()
                 name = self.table_products.item(i, 2).text()
                 self.selected_data.append((code, name, size))
+
+        if not has_checked:
+            row = self.table_products.currentRow()
+            if row >= 0:
+                code = self.table_products.item(row, 1).text()
+                name = self.table_products.item(row, 2).text()
+                self.selected_data.append((code, name, size))
+
         self.accept()
