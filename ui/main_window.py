@@ -90,8 +90,9 @@ class MainWindow(QMainWindow):
         totals_grid = QGridLayout()
         totals_grid.addWidget(QLabel("TOTAL BOX:"), 0, 0); self.lbl_total_boxes = QLabel("0"); totals_grid.addWidget(self.lbl_total_boxes, 0, 1)
         totals_grid.addWidget(QLabel("TOTAL PALLET:"), 1, 0); self.edit_total_pallets = QLineEdit(); self.edit_total_pallets.setFixedWidth(50); self.edit_total_pallets.textChanged.connect(self.update_totals); totals_grid.addWidget(self.edit_total_pallets, 1, 1)
-        totals_grid.addWidget(QLabel("NET WEIGHT:"), 2, 0); self.lbl_total_net = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_net, 2, 1)
-        totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 3, 0); self.lbl_total_gross = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_gross, 3, 1)
+        totals_grid.addWidget(QLabel("TOTAL METER:"), 2, 0); self.lbl_total_meters = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_meters, 2, 1)
+        totals_grid.addWidget(QLabel("NET WEIGHT:"), 3, 0); self.lbl_total_net = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_net, 3, 1)
+        totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 4, 0); self.lbl_total_gross = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_gross, 4, 1)
         footer_hbox.addLayout(totals_grid); main_layout.addLayout(footer_hbox)
 
         exp_layout = QHBoxLayout(); exp_layout.addStretch()
@@ -256,15 +257,16 @@ class MainWindow(QMainWindow):
             self.table.setItem(r, 5, QTableWidgetItem(str(bw))); self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
 
     def update_totals(self):
-        tb, tn, tg = 0, 0.0, 0.0
+        tb, tm, tn, tg = 0, 0.0, 0.0, 0.0
         for r in range(self.table.rowCount()):
             try:
-                b = self.table.item(r, 4).text(); n = self.table.item(r, 6).text(); g = self.table.item(r, 7).text()
+                m = self.table.item(r, 3).text(); b = self.table.item(r, 4).text(); n = self.table.item(r, 6).text(); g = self.table.item(r, 7).text()
+                if m: tm += float(m.replace(',', '.'))
                 if b: tb += int(b)
                 if n: tn += float(n)
                 if g: tg += float(g)
             except: pass
-        self.lbl_total_boxes.setText(str(tb)); self.lbl_total_net.setText(str(round(tn, 2))); self.lbl_total_gross.setText(str(round(tg, 2)))
+        self.lbl_total_boxes.setText(str(tb)); self.lbl_total_meters.setText(str(round(tm, 2))); self.lbl_total_net.setText(str(round(tn, 2))); self.lbl_total_gross.setText(str(round(tg, 2)))
 
     def load_settings(self):
         s = SettingsManager.get_all_settings()
@@ -285,7 +287,7 @@ class MainWindow(QMainWindow):
             'con_company': self.edit_con_company.text(), 'con_address': self.edit_con_address.text(), 'con_tel': self.edit_con_tel.text(),
             'ship_company': self.edit_ship_company.text(), 'ship_address': self.edit_ship_address.text(), 'ship_tel': self.edit_ship_tel.text(),
             'incoterms': self.edit_incoterms.text(), 'pol': self.edit_pol.text(), 'pod': self.edit_pod.text(), 'origin': self.edit_origin.text(), 'gtip': self.edit_gtip.text(),
-            'total_boxes': self.lbl_total_boxes.text(), 'total_pallets': self.edit_total_pallets.text(), 'total_net': self.lbl_total_net.text(), 'total_gross': self.lbl_total_gross.text(),
+            'total_boxes': self.lbl_total_boxes.text(), 'total_pallets': self.edit_total_pallets.text(), 'total_meters': self.lbl_total_meters.text(), 'total_net': self.lbl_total_net.text(), 'total_gross': self.lbl_total_gross.text(),
             'logo_path': SettingsManager.get_setting('logo_path', '')
         }
 

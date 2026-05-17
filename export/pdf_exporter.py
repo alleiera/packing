@@ -66,6 +66,8 @@ class PDFExporter(FPDF):
         self.set_x(150)
         self.cell(30, 5, 'TOTAL PALLET:', 1, 0); self.cell(20, 5, str(info.get('total_pallets', 0)), 1, 1, 'C')
         self.set_x(150)
+        self.cell(30, 5, 'TOTAL METER:', 1, 0); self.cell(20, 5, str(info.get('total_meters', 0)), 1, 1, 'C')
+        self.set_x(150)
         self.cell(30, 5, 'NET WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_net', 0)), 1, 1, 'C')
         self.set_x(150)
         self.cell(30, 5, 'GROSS WEIGHT:', 1, 0); self.cell(20, 5, str(info.get('total_gross', 0)), 1, 1, 'C')
