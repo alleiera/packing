@@ -13,7 +13,7 @@ from ui.size_dialog import SizeDialog
 from ui.selection_dialog import SelectionDialog
 from ui.size_selection_dialog import SizeSelectionDialog
 from settings_manager import SettingsManager
-from calculations import calculate_weights
+from calculations import calculate_weights, evaluate_math_expression
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -121,6 +121,13 @@ class MainWindow(QMainWindow):
     def on_item_changed(self, item):
         self.table.blockSignals(True)
         r, c = item.row(), item.column()
+
+        # Evaluate math expressions in specific columns: Meter(3), Box(4), Box W.(5), Net W.(6), Gross W.(7)
+        if c in [3, 4, 5, 6, 7] and item.text():
+            evaluated_text = evaluate_math_expression(item.text())
+            if evaluated_text != item.text():
+                item.setText(evaluated_text)
+
         if r == self.table.rowCount()-1 and item.text(): self.add_row()
         if c in [4, 7]: self.recalculate_row(r); self.update_totals()
         self.table.blockSignals(False)
@@ -179,6 +186,8 @@ class MainWindow(QMainWindow):
             for j, val in enumerate(cols):
                 c = curr_col + j
                 if c < self.table.columnCount():
+                    if c in [3, 4, 5, 6, 7] and val:
+                        val = evaluate_math_expression(val)
                     self.table.setItem(r, c, QTableWidgetItem(val))
                     if c in [4, 7]: self.recalculate_row(r)
         self.table.blockSignals(False); self.update_totals()
