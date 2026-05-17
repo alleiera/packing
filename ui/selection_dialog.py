@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,
                              QTableWidgetItem, QPushButton, QComboBox, QLabel, QAbstractItemView, QLineEdit)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QEvent
 from database import get_connection
 
 class SelectionDialog(QDialog):
@@ -25,6 +25,7 @@ class SelectionDialog(QDialog):
         # Search
         self.search_input = QLineEdit(); self.search_input.setPlaceholderText("Search Product / Ürün Ara...")
         self.search_input.returnPressed.connect(self.filter_table)
+        self.search_input.installEventFilter(self)
         self.search_input.hide()
         layout.addWidget(self.search_input)
 
@@ -37,6 +38,8 @@ class SelectionDialog(QDialog):
         self.table_products.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_products.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_products.setColumnWidth(0, 30)
+        self.table_products.installEventFilter(self)
+        self.table_products.viewport().installEventFilter(self)
         layout.addWidget(self.table_products)
 
         # Buttons
@@ -75,15 +78,12 @@ class SelectionDialog(QDialog):
             name = self.table_products.item(i, 2).text().lower()
             self.table_products.setRowHidden(i, query not in code and query not in name)
 
-    def keyPressEvent(self, event):
-        ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
-        if ctrl and event.key() == Qt.Key.Key_F:
-            if self.search_input.isHidden():
-                self.search_input.show()
-            self.search_input.setFocus()
-        elif event.key() == Qt.Key.Key_Space:
-            # Check if focus is on the table, or its viewport
-            if self.table_products.hasFocus() or self.table_products.viewport().hasFocus():
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.KeyPress:
+            if obj == self.search_input and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self.filter_table()
+                return True
+            if (obj == self.table_products or obj == self.table_products.viewport()) and event.key() == Qt.Key.Key_Space:
                 row = self.table_products.currentRow()
                 if row >= 0:
                     item = self.table_products.item(row, 0)
@@ -91,8 +91,15 @@ class SelectionDialog(QDialog):
                         item.setCheckState(Qt.CheckState.Unchecked)
                     else:
                         item.setCheckState(Qt.CheckState.Checked)
-            else:
-                super().keyPressEvent(event)
+                return True
+        return super().eventFilter(obj, event)
+
+    def keyPressEvent(self, event):
+        ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        if ctrl and event.key() == Qt.Key.Key_F:
+            if self.search_input.isHidden():
+                self.search_input.show()
+            self.search_input.setFocus()
         else:
             super().keyPressEvent(event)
 
