@@ -24,7 +24,8 @@ class SelectionDialog(QDialog):
 
         # Search
         self.search_input = QLineEdit(); self.search_input.setPlaceholderText("Search Product / Ürün Ara...")
-        self.search_input.textChanged.connect(self.filter_table)
+        self.search_input.returnPressed.connect(self.filter_table)
+        self.search_input.hide()
         layout.addWidget(self.search_input)
 
         # Product Table
@@ -32,7 +33,8 @@ class SelectionDialog(QDialog):
         self.table_products = QTableWidget()
         self.table_products.setColumnCount(3)
         self.table_products.setHorizontalHeaderLabels(["", "Code / Kod", "Name / Ad"])
-        self.table_products.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table_products.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table_products.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_products.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_products.setColumnWidth(0, 30)
         layout.addWidget(self.table_products)
@@ -72,6 +74,27 @@ class SelectionDialog(QDialog):
             code = self.table_products.item(i, 1).text().lower()
             name = self.table_products.item(i, 2).text().lower()
             self.table_products.setRowHidden(i, query not in code and query not in name)
+
+    def keyPressEvent(self, event):
+        ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        if ctrl and event.key() == Qt.Key.Key_F:
+            if self.search_input.isHidden():
+                self.search_input.show()
+            self.search_input.setFocus()
+        elif event.key() == Qt.Key.Key_Space:
+            # Check if focus is on the table, or its viewport
+            if self.table_products.hasFocus() or self.table_products.viewport().hasFocus():
+                row = self.table_products.currentRow()
+                if row >= 0:
+                    item = self.table_products.item(row, 0)
+                    if item.checkState() == Qt.CheckState.Checked:
+                        item.setCheckState(Qt.CheckState.Unchecked)
+                    else:
+                        item.setCheckState(Qt.CheckState.Checked)
+            else:
+                super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
 
     def handle_ok(self):
         size = self.combo_size.currentText()
