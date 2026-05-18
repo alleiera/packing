@@ -48,9 +48,11 @@ class ExcelExporter:
             ws.cell(row=tr, column=8, value=info.get('total_boxes'))
             ws.cell(row=tr+1, column=7, value="TOTAL PALLET:")
             ws.cell(row=tr+1, column=8, value=info.get('total_pallets'))
-            ws.cell(row=tr+2, column=7, value="NET WEIGHT:")
-            ws.cell(row=tr+2, column=8, value=info.get('total_net'))
-            ws.cell(row=tr+3, column=7, value="GROSS WEIGHT:")
-            ws.cell(row=tr+3, column=8, value=info.get('total_gross'))
+            ws.cell(row=tr+2, column=7, value="TOTAL METER:")
+            ws.cell(row=tr+2, column=8, value=info.get('total_meters'))
+            ws.cell(row=tr+3, column=7, value="NET WEIGHT:")
+            ws.cell(row=tr+3, column=8, value=info.get('total_net'))
+            ws.cell(row=tr+4, column=7, value="GROSS WEIGHT:")
+            ws.cell(row=tr+4, column=8, value=info.get('total_gross'))
 
         return True
