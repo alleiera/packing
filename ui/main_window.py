@@ -126,7 +126,16 @@ class MainWindow(QMainWindow):
         self.table.blockSignals(True)
         r, c = item.row(), item.column()
         if r == self.table.rowCount()-1 and item.text(): self.add_row()
-        if c in [0, 5, 8]: self.update_table_calculations(); self.update_totals()
+        if c == 6:
+            if item.text().strip():
+                item.setData(Qt.ItemDataRole.UserRole, True)
+            else:
+                item.setData(Qt.ItemDataRole.UserRole, False)
+            self.update_table_calculations()
+            self.update_totals()
+        elif c in [0, 5, 8]:
+            self.update_table_calculations()
+            self.update_totals()
         self.table.blockSignals(False)
 
     def on_cell_double_clicked(self, r, c):
@@ -272,30 +281,73 @@ class MainWindow(QMainWindow):
                 groups.append(group)
                 i = j
 
-        empty_box_w = SettingsManager.get_setting('empty_box_weight', 0.5)
-        empty_pallet_w = SettingsManager.get_setting('empty_pallet_weight', 15.0)
+        empty_box_w = float(SettingsManager.get_setting('empty_box_weight', 0.5))
+        empty_pallet_w = float(SettingsManager.get_setting('empty_pallet_weight', 15.0))
 
         for group in groups:
             total_boxes = 0
+            manual_boxes = 0
+            manual_weight = 0.0
+
+            auto_rows = []
+            manual_rows = []
+
             for r in group:
                 b_item = self.table.item(r, 5)
+                box_count = 0
                 if b_item and b_item.text():
                     try:
-                        total_boxes += int(b_item.text())
+                        box_count = int(b_item.text())
+                        total_boxes += box_count
                     except ValueError:
                         pass
 
+                koli_ag_item = self.table.item(r, 6)
+                is_manual = False
+                if koli_ag_item and koli_ag_item.data(Qt.ItemDataRole.UserRole) == True and koli_ag_item.text():
+                    try:
+                        koli_ag = float(koli_ag_item.text())
+                        is_manual = True
+                        manual_rows.append((r, box_count, koli_ag))
+                        manual_boxes += box_count
+                        manual_weight += box_count * koli_ag
+                    except ValueError:
+                        pass
+
+                if not is_manual:
+                    auto_rows.append((r, box_count))
+
             first_row = group[0]
             g_item = self.table.item(first_row, 8)
-            gross = g_item.text() if g_item else ""
+            try:
+                gross = float(g_item.text()) if g_item and g_item.text() else 0.0
+            except ValueError:
+                gross = 0.0
 
-            if total_boxes > 0 and gross:
-                bw, nw = calculate_weights(gross, total_boxes, empty_box_w, empty_pallet_w)
-                for r in group:
-                    self.table.setItem(r, 6, QTableWidgetItem(str(bw)))
+            if total_boxes > 0 and gross > 0:
+                total_available_weight_for_boxes = gross - empty_pallet_w
+                remaining_weight_for_auto_boxes = total_available_weight_for_boxes - manual_weight
+                auto_boxes = total_boxes - manual_boxes
+
+                # Update auto Koli Ağ.
+                if auto_boxes > 0:
+                    auto_bw = remaining_weight_for_auto_boxes / auto_boxes
+                    for r, box_count in auto_rows:
+                        item = self.table.item(r, 6)
+                        if not item:
+                            item = QTableWidgetItem()
+                            self.table.setItem(r, 6, item)
+                        item.setText(str(round(auto_bw, 2)))
+                        item.setData(Qt.ItemDataRole.UserRole, False)
+                elif remaining_weight_for_auto_boxes != 0:
+                    # If mathematically invalid, perhaps fallback or do nothing
+                    pass
+
+                # Update Net Ağ. on first row
+                _, nw = calculate_weights(gross, total_boxes, empty_box_w, empty_pallet_w)
                 self.table.setItem(first_row, 7, QTableWidgetItem(str(nw)))
 
-                # Clear subsequent rows
+                # Clear subsequent rows spans
                 for r in group[1:]:
                     self.table.setItem(r, 7, QTableWidgetItem(""))
                     self.table.setItem(r, 8, QTableWidgetItem(""))
@@ -305,7 +357,15 @@ class MainWindow(QMainWindow):
                     self.table.setSpan(first_row, 8, len(group), 1)
             else:
                 for r in group:
-                    self.table.setItem(r, 6, QTableWidgetItem(""))
+                    item = self.table.item(r, 6)
+                    if not item:
+                        item = QTableWidgetItem()
+                        self.table.setItem(r, 6, item)
+                    # if user manually set it and gross is invalid, we could optionally clear it,
+                    # but maybe preserve it if it's manual
+                    if not item.data(Qt.ItemDataRole.UserRole):
+                        item.setText("")
+
                 self.table.setItem(first_row, 7, QTableWidgetItem(""))
                 for r in group[1:]:
                     self.table.setItem(r, 7, QTableWidgetItem(""))
