@@ -6,7 +6,7 @@ import os
 class ExcelExporter:
     @staticmethod
     def export(fp, info, items, lang='tr'):
-        hs = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else              ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
+        hs = ["Palet No", "Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else ["Pallet No", "Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
         df = pd.DataFrame(items, columns=hs)
         with pd.ExcelWriter(fp, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, startrow=25)

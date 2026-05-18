@@ -49,7 +49,7 @@ class PDFExporter(FPDF):
     def draw_table(self, headers, data):
         self.set_font('helvetica', 'B', 8)
         self.set_fill_color(220, 220, 220)
-        ws = [20, 50, 25, 20, 15, 20, 20, 20]
+        ws = [15, 20, 45, 20, 15, 15, 20, 20, 20]
         for i, h in enumerate(headers): self.cell(ws[i], 6, self.tr_fix(h), 1, 0, 'C', True)
         self.ln()
         self.set_font('helvetica', '', 8)
@@ -94,7 +94,7 @@ def export_to_pdf(fp, info, items, lang='tr'):
     pdf.add_page()
     pdf.header_section(info)
     pdf.sections(info)
-    hs = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else          ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
+    hs = ["Palet No", "Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else ["Pallet No", "Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
     pdf.draw_table(hs, items)
     pdf.draw_totals(info)
     pdf.draw_page_footer(info)

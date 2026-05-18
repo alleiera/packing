@@ -21,10 +21,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Packing List Generator")
         self.setMinimumSize(1100, 900)
         self.current_lang = SettingsManager.get_setting('language', 'tr')
-        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
+        self.headers_tr = ["Palet No", "Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
         self.init_ui()
         self.load_settings()
         self.init_table_rows()
+        self.update_table_calculations()
 
     def init_ui(self):
         central_widget = QWidget()
@@ -75,7 +76,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(extra_grid)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(9)
         self.update_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.itemChanged.connect(self.on_item_changed)
@@ -104,7 +105,7 @@ class MainWindow(QMainWindow):
         for _ in range(15): self.add_row()
 
     def update_headers(self):
-        self.table.setHorizontalHeaderLabels(self.headers_tr if self.current_lang == 'tr' else ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."])
+        self.table.setHorizontalHeaderLabels(self.headers_tr if self.current_lang == 'tr' else ["Pallet No", "Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."])
 
     def toggle_language(self):
         self.current_lang = 'en' if self.current_lang == 'tr' else 'tr'
@@ -112,32 +113,35 @@ class MainWindow(QMainWindow):
 
     def add_row(self):
         r = self.table.rowCount(); self.table.insertRow(r)
-        for i in range(8): self.table.setItem(r, i, QTableWidgetItem(""))
+        for i in range(9): self.table.setItem(r, i, QTableWidgetItem(""))
 
     def remove_row(self):
         curr = self.table.currentRow()
-        if curr >= 0: self.table.removeRow(curr); self.update_totals()
+        if curr >= 0:
+            self.table.removeRow(curr)
+            self.update_table_calculations()
+            self.update_totals()
 
     def on_item_changed(self, item):
         self.table.blockSignals(True)
         r, c = item.row(), item.column()
         if r == self.table.rowCount()-1 and item.text(): self.add_row()
-        if c in [4, 7]: self.recalculate_row(r); self.update_totals()
+        if c in [0, 5, 8]: self.update_table_calculations(); self.update_totals()
         self.table.blockSignals(False)
 
     def on_cell_double_clicked(self, r, c):
-        if c == 2: # Size
+        if c == 3: # Size
             dlg = SizeSelectionDialog(self)
-            if dlg.exec(): self.table.setItem(r, 2, QTableWidgetItem(dlg.selected_size))
-        elif c in [0, 1]: # Product
+            if dlg.exec(): self.table.setItem(r, 3, QTableWidgetItem(dlg.selected_size))
+        elif c in [1, 2]: # Product
             dlg = SelectionDialog(self)
             if dlg.exec():
                 self.table.blockSignals(True); curr = r
                 for code, name, size in dlg.selected_data:
                     if curr >= self.table.rowCount(): self.add_row()
-                    self.table.setItem(curr, 0, QTableWidgetItem(code)); self.table.setItem(curr, 1, QTableWidgetItem(name)); self.table.setItem(curr, 2, QTableWidgetItem(size))
+                    self.table.setItem(curr, 1, QTableWidgetItem(code)); self.table.setItem(curr, 2, QTableWidgetItem(name)); self.table.setItem(curr, 3, QTableWidgetItem(size))
                     curr += 1
-                self.table.blockSignals(False); self.update_totals()
+                self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def show_context_menu(self, pos):
         menu = QMenu()
@@ -180,8 +184,8 @@ class MainWindow(QMainWindow):
                 c = curr_col + j
                 if c < self.table.columnCount():
                     self.table.setItem(r, c, QTableWidgetItem(val))
-                    if c in [4, 7]: self.recalculate_row(r)
-        self.table.blockSignals(False); self.update_totals()
+
+        self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def clear_selected_cells(self):
         ranges = self.table.selectedRanges()
@@ -190,17 +194,17 @@ class MainWindow(QMainWindow):
             for r in range(rng.topRow(), rng.bottomRow() + 1):
                 for c in range(rng.leftColumn(), rng.rightColumn() + 1):
                     self.table.setItem(r, c, QTableWidgetItem(""))
-                    if c in [4, 7]: self.recalculate_row(r)
-        self.table.blockSignals(False); self.update_totals()
+
+        self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def clear_current_row(self):
         curr = self.table.currentRow()
         if curr < 0: return
         self.table.blockSignals(True)
-        for c in range(8):
+        for c in range(9):
             self.table.setItem(curr, c, QTableWidgetItem(""))
-        self.recalculate_row(curr)
-        self.table.blockSignals(False); self.update_totals()
+
+        self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def fill_down(self):
         selected_ranges = self.table.selectedRanges()
@@ -212,20 +216,20 @@ class MainWindow(QMainWindow):
                 top_val = self.table.item(top_row, col).text() if self.table.item(top_row, col) else ""
                 for row in range(top_row + 1, rng.bottomRow() + 1):
                     self.table.setItem(row, col, QTableWidgetItem(top_val))
-                    if col in [4, 7]: self.recalculate_row(row)
-        self.table.blockSignals(False); self.update_totals()
+
+        self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def duplicate_row(self):
         curr = self.table.currentRow()
         if curr < 0: return
         self.table.blockSignals(True)
-        row_data = [self.table.item(curr, i).text() if self.table.item(curr, i) else "" for i in range(8)]
+        row_data = [self.table.item(curr, i).text() if self.table.item(curr, i) else "" for i in range(9)]
         target = curr + 1
         if target >= self.table.rowCount(): self.add_row()
         for i, val in enumerate(row_data):
             self.table.setItem(target, i, QTableWidgetItem(val))
-        self.recalculate_row(target)
-        self.table.blockSignals(False); self.update_totals()
+
+        self.update_table_calculations(); self.table.blockSignals(False); self.update_totals()
 
     def keyPressEvent(self, event):
         ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
@@ -240,17 +244,80 @@ class MainWindow(QMainWindow):
             else: self.clear_selected_cells()
         else: super().keyPressEvent(event)
 
-    def recalculate_row(self, r):
-        b, g = self.table.item(r, 4), self.table.item(r, 7)
-        if b and g and b.text() and g.text():
-            bw, nw = calculate_weights(g.text(), b.text(), SettingsManager.get_setting('empty_box_weight', 0.5), SettingsManager.get_setting('empty_pallet_weight', 15.0))
-            self.table.setItem(r, 5, QTableWidgetItem(str(bw))); self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
+    def update_table_calculations(self):
+        self.table.blockSignals(True)
+        self.table.clearSpans()
+
+        row_count = self.table.rowCount()
+        groups = []
+        i = 0
+        while i < row_count:
+            palet_item = self.table.item(i, 0)
+            palet_no = palet_item.text().strip() if palet_item else ""
+
+            if not palet_no:
+                groups.append([i])
+                i += 1
+            else:
+                group = [i]
+                j = i + 1
+                while j < row_count:
+                    next_palet_item = self.table.item(j, 0)
+                    next_palet_no = next_palet_item.text().strip() if next_palet_item else ""
+                    if next_palet_no == palet_no:
+                        group.append(j)
+                        j += 1
+                    else:
+                        break
+                groups.append(group)
+                i = j
+
+        empty_box_w = SettingsManager.get_setting('empty_box_weight', 0.5)
+        empty_pallet_w = SettingsManager.get_setting('empty_pallet_weight', 15.0)
+
+        for group in groups:
+            total_boxes = 0
+            for r in group:
+                b_item = self.table.item(r, 5)
+                if b_item and b_item.text():
+                    try:
+                        total_boxes += int(b_item.text())
+                    except ValueError:
+                        pass
+
+            first_row = group[0]
+            g_item = self.table.item(first_row, 8)
+            gross = g_item.text() if g_item else ""
+
+            if total_boxes > 0 and gross:
+                bw, nw = calculate_weights(gross, total_boxes, empty_box_w, empty_pallet_w)
+                for r in group:
+                    self.table.setItem(r, 6, QTableWidgetItem(str(bw)))
+                self.table.setItem(first_row, 7, QTableWidgetItem(str(nw)))
+
+                # Clear subsequent rows
+                for r in group[1:]:
+                    self.table.setItem(r, 7, QTableWidgetItem(""))
+                    self.table.setItem(r, 8, QTableWidgetItem(""))
+
+                if len(group) > 1:
+                    self.table.setSpan(first_row, 7, len(group), 1)
+                    self.table.setSpan(first_row, 8, len(group), 1)
+            else:
+                for r in group:
+                    self.table.setItem(r, 6, QTableWidgetItem(""))
+                self.table.setItem(first_row, 7, QTableWidgetItem(""))
+                for r in group[1:]:
+                    self.table.setItem(r, 7, QTableWidgetItem(""))
+                    self.table.setItem(r, 8, QTableWidgetItem(""))
+
+        self.table.blockSignals(False)
 
     def update_totals(self):
         tb, tn, tg = 0, 0.0, 0.0
         for r in range(self.table.rowCount()):
             try:
-                b = self.table.item(r, 4).text(); n = self.table.item(r, 6).text(); g = self.table.item(r, 7).text()
+                b = self.table.item(r, 5).text(); n = self.table.item(r, 7).text(); g = self.table.item(r, 8).text()
                 if b: tb += int(b)
                 if n: tn += float(n)
                 if g: tg += float(g)
@@ -283,7 +350,7 @@ class MainWindow(QMainWindow):
     def get_table_items(self):
         items = []
         for r in range(self.table.rowCount()):
-            row = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(8)]
+            row = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(9)]
             if any(row): items.append(row)
         return items
 
