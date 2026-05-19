@@ -6,7 +6,7 @@ import os
 class ExcelExporter:
     @staticmethod
     def export(fp, info, items, lang='tr'):
-        hs = ["Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == 'tr' else              ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
+        hs = ["Palet No", "Kod", "Ad", "Olcu", "Metre", "Koli", "Koli Ag.", "Net Ag.", "Brut Ag."] if lang == "tr" else ["Pallet No", "Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."]
         df = pd.DataFrame(items, columns=hs)
         with pd.ExcelWriter(fp, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, startrow=25)
@@ -44,15 +44,13 @@ class ExcelExporter:
 
             # Totals
             tr = 25 + len(items) + 2
-            ws.cell(row=tr, column=7, value="TOTAL BOX:")
-            ws.cell(row=tr, column=8, value=info.get('total_boxes'))
-            ws.cell(row=tr+1, column=7, value="TOTAL PALLET:")
-            ws.cell(row=tr+1, column=8, value=info.get('total_pallets'))
-            ws.cell(row=tr+2, column=7, value="TOTAL METER:")
-            ws.cell(row=tr+2, column=8, value=info.get('total_meters'))
-            ws.cell(row=tr+3, column=7, value="NET WEIGHT:")
-            ws.cell(row=tr+3, column=8, value=info.get('total_net'))
-            ws.cell(row=tr+4, column=7, value="GROSS WEIGHT:")
-            ws.cell(row=tr+4, column=8, value=info.get('total_gross'))
+            ws.cell(row=tr, column=9, value="TOTAL BOX:")
+            ws.cell(row=tr, column=9, value=info.get('total_boxes'))
+            ws.cell(row=tr+1, column=9, value="TOTAL PALLET:")
+            ws.cell(row=tr+1, column=9, value=info.get('total_pallets'))
+            ws.cell(row=tr+2, column=9, value="NET WEIGHT:")
+            ws.cell(row=tr+2, column=9, value=info.get('total_net'))
+            ws.cell(row=tr+3, column=9, value="GROSS WEIGHT:")
+            ws.cell(row=tr+3, column=9, value=info.get('total_gross'))
 
         return True

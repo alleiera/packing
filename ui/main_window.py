@@ -13,7 +13,7 @@ from ui.size_dialog import SizeDialog
 from ui.selection_dialog import SelectionDialog
 from ui.size_selection_dialog import SizeSelectionDialog
 from settings_manager import SettingsManager
-from calculations import calculate_weights, evaluate_math_expression
+from calculations import calculate_weights
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Packing List Generator")
         self.setMinimumSize(1100, 900)
         self.current_lang = SettingsManager.get_setting('language', 'tr')
-        self.headers_tr = ["Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
+        self.headers_tr = ["Palet No", "Ürün Kodu", "Ürün Adı", "Ölçü", "Metre", "Koli", "Koli Ağ.", "Net Ağ.", "Brut Ağ."]
         self.init_ui()
         self.load_settings()
         self.init_table_rows()
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(extra_grid)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(9)
         self.update_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.itemChanged.connect(self.on_item_changed)
@@ -90,9 +90,8 @@ class MainWindow(QMainWindow):
         totals_grid = QGridLayout()
         totals_grid.addWidget(QLabel("TOTAL BOX:"), 0, 0); self.lbl_total_boxes = QLabel("0"); totals_grid.addWidget(self.lbl_total_boxes, 0, 1)
         totals_grid.addWidget(QLabel("TOTAL PALLET:"), 1, 0); self.edit_total_pallets = QLineEdit(); self.edit_total_pallets.setFixedWidth(50); self.edit_total_pallets.textChanged.connect(self.update_totals); totals_grid.addWidget(self.edit_total_pallets, 1, 1)
-        totals_grid.addWidget(QLabel("TOTAL METER:"), 2, 0); self.lbl_total_meters = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_meters, 2, 1)
-        totals_grid.addWidget(QLabel("NET WEIGHT:"), 3, 0); self.lbl_total_net = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_net, 3, 1)
-        totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 4, 0); self.lbl_total_gross = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_gross, 4, 1)
+        totals_grid.addWidget(QLabel("NET WEIGHT:"), 2, 0); self.lbl_total_net = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_net, 2, 1)
+        totals_grid.addWidget(QLabel("GROSS WEIGHT:"), 3, 0); self.lbl_total_gross = QLabel("0.0"); totals_grid.addWidget(self.lbl_total_gross, 3, 1)
         footer_hbox.addLayout(totals_grid); main_layout.addLayout(footer_hbox)
 
         exp_layout = QHBoxLayout(); exp_layout.addStretch()
@@ -105,7 +104,7 @@ class MainWindow(QMainWindow):
         for _ in range(15): self.add_row()
 
     def update_headers(self):
-        self.table.setHorizontalHeaderLabels(self.headers_tr if self.current_lang == 'tr' else ["Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."])
+        self.table.setHorizontalHeaderLabels(self.headers_tr if self.current_lang == "tr" else ["Pallet No", "Code", "Name", "Size", "Meter", "Box", "Box W.", "Net W.", "Gross W."])
 
     def toggle_language(self):
         self.current_lang = 'en' if self.current_lang == 'tr' else 'tr'
@@ -113,60 +112,33 @@ class MainWindow(QMainWindow):
 
     def add_row(self):
         r = self.table.rowCount(); self.table.insertRow(r)
-        for i in range(8): self.table.setItem(r, i, QTableWidgetItem(""))
+        for i in range(9): self.table.setItem(r, i, QTableWidgetItem(""))
 
     def remove_row(self):
         curr = self.table.currentRow()
         if curr >= 0: self.table.removeRow(curr); self.update_totals()
 
-    def insert_empty_row(self):
-        curr = self.table.currentRow()
-        if curr < 0: return
-        self.table.blockSignals(True)
-        self.table.insertRow(curr)
-        for i in range(8): self.table.setItem(curr, i, QTableWidgetItem(""))
-        self.table.blockSignals(False)
-        self.update_totals()
-
-    def ensure_empty_row(self):
-        self.table.blockSignals(True)
-        last_row = self.table.rowCount() - 1
-        has_data = False
-        if last_row >= 0:
-            for c in range(self.table.columnCount()):
-                item = self.table.item(last_row, c)
-                if item and item.text().strip():
-                    has_data = True
-                    break
-        if has_data or last_row < 0:
-            self.add_row()
-        self.table.blockSignals(False)
-
     def on_item_changed(self, item):
         self.table.blockSignals(True)
         r, c = item.row(), item.column()
-
-        # Evaluate math expressions in specific columns: Meter(3), Box(4), Box W.(5), Net W.(6), Gross W.(7)
-        if c in [3, 4, 5, 6, 7] and item.text():
-            evaluated_text = evaluate_math_expression(item.text())
-            if evaluated_text != item.text():
-                item.setText(evaluated_text)
-
-        if c in [4, 7]: self.recalculate_row(r)
+        if r == self.table.rowCount()-1 and item.text(): self.add_row()
+        if c in [5, 8, 0]:
+            pallet_no = self.table.item(r, 0).text() if self.table.item(r, 0) else ""
+            if pallet_no: self.recalculate_pallet(pallet_no)
+            else: self.recalculate_row(r)
+            self.update_totals()
         self.table.blockSignals(False)
-        self.update_totals() # This will now trigger ensure_empty_row
-
     def on_cell_double_clicked(self, r, c):
-        if c == 2: # Size
+        if c == 3: # Size
             dlg = SizeSelectionDialog(self)
-            if dlg.exec(): self.table.setItem(r, 2, QTableWidgetItem(dlg.selected_size))
-        elif c in [0, 1]: # Product
+            if dlg.exec(): self.table.setItem(r, 3, QTableWidgetItem(dlg.selected_size))
+        elif c in [1, 2]: # Product
             dlg = SelectionDialog(self)
             if dlg.exec():
                 self.table.blockSignals(True); curr = r
                 for code, name, size in dlg.selected_data:
                     if curr >= self.table.rowCount(): self.add_row()
-                    self.table.setItem(curr, 0, QTableWidgetItem(code)); self.table.setItem(curr, 1, QTableWidgetItem(name)); self.table.setItem(curr, 2, QTableWidgetItem(size))
+                    self.table.setItem(curr, 1, QTableWidgetItem(code)); self.table.setItem(curr, 2, QTableWidgetItem(name)); self.table.setItem(curr, 3, QTableWidgetItem(size))
                     curr += 1
                 self.table.blockSignals(False); self.update_totals()
 
@@ -177,7 +149,6 @@ class MainWindow(QMainWindow):
         menu.addSeparator()
         delete_action = QAction("Clear Selection / Seçimi Temizle (Delete)", self); delete_action.triggered.connect(self.clear_selected_cells); menu.addAction(delete_action)
         clear_row_action = QAction("Clear Row / Satırı Temizle (Shift+Delete)", self); clear_row_action.triggered.connect(self.clear_current_row); menu.addAction(clear_row_action)
-        insert_row_action = QAction("Insert Row / Araya Satır Ekle (Shift+Insert)", self); insert_row_action.triggered.connect(self.insert_empty_row); menu.addAction(insert_row_action)
         menu.addSeparator()
         fill_down_action = QAction("Fill Down / Aşağı Kopyala (Ctrl+D)", self); fill_down_action.triggered.connect(self.fill_down); menu.addAction(fill_down_action)
         duplicate_row_action = QAction("Duplicate Row / Satırı Çoğalt", self); duplicate_row_action.triggered.connect(self.duplicate_row); menu.addAction(duplicate_row_action)
@@ -211,10 +182,8 @@ class MainWindow(QMainWindow):
             for j, val in enumerate(cols):
                 c = curr_col + j
                 if c < self.table.columnCount():
-                    if c in [3, 4, 5, 6, 7] and val:
-                        val = evaluate_math_expression(val)
                     self.table.setItem(r, c, QTableWidgetItem(val))
-                    if c in [4, 7]: self.recalculate_row(r)
+                    if c in [5, 8, 0]: self.recalculate_row(r)
         self.table.blockSignals(False); self.update_totals()
 
     def clear_selected_cells(self):
@@ -224,14 +193,14 @@ class MainWindow(QMainWindow):
             for r in range(rng.topRow(), rng.bottomRow() + 1):
                 for c in range(rng.leftColumn(), rng.rightColumn() + 1):
                     self.table.setItem(r, c, QTableWidgetItem(""))
-                    if c in [4, 7]: self.recalculate_row(r)
+                    if c in [5, 8, 0]: self.recalculate_row(r)
         self.table.blockSignals(False); self.update_totals()
 
     def clear_current_row(self):
         curr = self.table.currentRow()
         if curr < 0: return
         self.table.blockSignals(True)
-        for c in range(8):
+        for c in range(9):
             self.table.setItem(curr, c, QTableWidgetItem(""))
         self.recalculate_row(curr)
         self.table.blockSignals(False); self.update_totals()
@@ -246,14 +215,14 @@ class MainWindow(QMainWindow):
                 top_val = self.table.item(top_row, col).text() if self.table.item(top_row, col) else ""
                 for row in range(top_row + 1, rng.bottomRow() + 1):
                     self.table.setItem(row, col, QTableWidgetItem(top_val))
-                    if col in [4, 7]: self.recalculate_row(row)
+                    if col in [5, 8, 0]: self.recalculate_row(row)
         self.table.blockSignals(False); self.update_totals()
 
     def duplicate_row(self):
         curr = self.table.currentRow()
         if curr < 0: return
         self.table.blockSignals(True)
-        row_data = [self.table.item(curr, i).text() if self.table.item(curr, i) else "" for i in range(8)]
+        row_data = [self.table.item(curr, i).text() if self.table.item(curr, i) else "" for i in range(9)]
         target = curr + 1
         if target >= self.table.rowCount(): self.add_row()
         for i, val in enumerate(row_data):
@@ -272,28 +241,54 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key.Key_Delete:
             if shift: self.clear_current_row()
             else: self.clear_selected_cells()
-        elif event.key() == Qt.Key.Key_Insert and shift:
-            self.insert_empty_row()
         else: super().keyPressEvent(event)
 
+    def recalculate_pallet(self, pallet_no):
+        if not pallet_no: return
+        rows = []
+        total_boxes = 0
+        gross_weight = ""
+        for r in range(self.table.rowCount()):
+            p_item = self.table.item(r, 0)
+            if p_item and p_item.text() == pallet_no:
+                rows.append(r)
+                b_text = self.table.item(r, 5).text() if self.table.item(r, 5) else "0"
+                try: total_boxes += int(b_text)
+                except: pass
+                g_text = self.table.item(r, 8).text() if self.table.item(r, 8) else ""
+                if g_text: gross_weight = g_text
+
+        if rows and total_boxes > 0 and gross_weight:
+            bw, nw_total = calculate_weights(gross_weight, total_boxes,
+                                            SettingsManager.get_setting('empty_box_weight', 0.5),
+                                            SettingsManager.get_setting('empty_pallet_weight', 15.0))
+            for r in rows:
+                b_text = self.table.item(r, 5).text() if self.table.item(r, 5) else "0"
+                try:
+                    row_boxes = int(b_text)
+                    # row_net = (net_total / total_boxes) * row_boxes
+                    row_net = round((nw_total / total_boxes) * row_boxes, 2)
+                    self.table.setItem(r, 6, QTableWidgetItem(str(bw)))
+                    self.table.setItem(r, 7, QTableWidgetItem(str(row_net)))
+                    self.table.setItem(r, 8, QTableWidgetItem(gross_weight))
+                except: pass
+
     def recalculate_row(self, r):
-        b, g = self.table.item(r, 4), self.table.item(r, 7)
+        b, g = self.table.item(r, 5), self.table.item(r, 8)
         if b and g and b.text() and g.text():
             bw, nw = calculate_weights(g.text(), b.text(), SettingsManager.get_setting('empty_box_weight', 0.5), SettingsManager.get_setting('empty_pallet_weight', 15.0))
-            self.table.setItem(r, 5, QTableWidgetItem(str(bw))); self.table.setItem(r, 6, QTableWidgetItem(str(nw)))
+            self.table.setItem(r, 6, QTableWidgetItem(str(bw))); self.table.setItem(r, 7, QTableWidgetItem(str(nw)))
 
     def update_totals(self):
-        tb, tm, tn, tg = 0, 0.0, 0.0, 0.0
+        tb, tn, tg = 0, 0.0, 0.0
         for r in range(self.table.rowCount()):
             try:
-                m = self.table.item(r, 3).text(); b = self.table.item(r, 4).text(); n = self.table.item(r, 6).text(); g = self.table.item(r, 7).text()
-                if m: tm += float(m.replace(',', '.'))
+                b = self.table.item(r, 5).text(); n = self.table.item(r, 7).text(); g = self.table.item(r, 8).text()
                 if b: tb += int(b)
                 if n: tn += float(n)
                 if g: tg += float(g)
             except: pass
-        self.lbl_total_boxes.setText(str(tb)); self.lbl_total_meters.setText(str(round(tm, 2))); self.lbl_total_net.setText(str(round(tn, 2))); self.lbl_total_gross.setText(str(round(tg, 2)))
-        self.ensure_empty_row()
+        self.lbl_total_boxes.setText(str(tb)); self.lbl_total_net.setText(str(round(tn, 2))); self.lbl_total_gross.setText(str(round(tg, 2)))
 
     def load_settings(self):
         s = SettingsManager.get_all_settings()
@@ -314,14 +309,14 @@ class MainWindow(QMainWindow):
             'con_company': self.edit_con_company.text(), 'con_address': self.edit_con_address.text(), 'con_tel': self.edit_con_tel.text(),
             'ship_company': self.edit_ship_company.text(), 'ship_address': self.edit_ship_address.text(), 'ship_tel': self.edit_ship_tel.text(),
             'incoterms': self.edit_incoterms.text(), 'pol': self.edit_pol.text(), 'pod': self.edit_pod.text(), 'origin': self.edit_origin.text(), 'gtip': self.edit_gtip.text(),
-            'total_boxes': self.lbl_total_boxes.text(), 'total_pallets': self.edit_total_pallets.text(), 'total_meters': self.lbl_total_meters.text(), 'total_net': self.lbl_total_net.text(), 'total_gross': self.lbl_total_gross.text(),
+            'total_boxes': self.lbl_total_boxes.text(), 'total_pallets': self.edit_total_pallets.text(), 'total_net': self.lbl_total_net.text(), 'total_gross': self.lbl_total_gross.text(),
             'logo_path': SettingsManager.get_setting('logo_path', '')
         }
 
     def get_table_items(self):
         items = []
         for r in range(self.table.rowCount()):
-            row = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(8)]
+            row = [self.table.item(r, c).text() if self.table.item(r, c) else "" for c in range(9)]
             if any(row): items.append(row)
         return items
 
